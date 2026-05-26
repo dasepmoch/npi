@@ -7,7 +7,7 @@
 <h1 align="center">npi</h1>
 
 <p align="center">
-  <strong>Intelligent npm install assistant.</strong>
+  <strong>A practical npm package advisor that combines npm metadata, GitHub signals, package rules, and project context before installation.</strong>
 </p>
 
 <p align="center">
@@ -22,20 +22,21 @@
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> •
-  <a href="#install">Install</a> •
-  <a href="#usage">Usage</a> •
-  <a href="#philosophy">Philosophy</a> •
-  <a href="#architecture">Architecture</a>
+  <a href="#features">Features</a> -
+  <a href="#install">Install</a> -
+  <a href="#usage">Usage</a> -
+  <a href="#configuration">Config</a> -
+  <a href="#plugin-system">Plugins</a> -
+  <a href="#scoring-system">Scoring</a>
 </p>
 
 ---
 
 ## What is npi?
 
-**npi** is a dependency intelligence engine for the JavaScript ecosystem.
+**npi** is a heuristic npm install assistant that helps you think before adding dependencies.
 
-It helps you make better decisions before installing packages - analyzing health, bundle impact, ecosystem sentiment, and recommending alternatives when appropriate.
+It analyzes packages using npm registry metadata, GitHub signals, curated rules, and your project context - then gives you health scores, bundle impact, and suggests alternatives when appropriate.
 
 ```bash
 # Instead of blindly installing:
@@ -46,49 +47,40 @@ npi moment
 ```
 
 ```
-╭─ 📦 Package ─────────────────────────────────╮
-│ moment                                        │
-│ Parse, validate, manipulate, and display dates│
-╰───────────────────────────────────────────────╯
-
-  Health Score        42/100
+  Estimated Health    42/100
   Bundle Impact       High
-  Dependencies        0
-  TypeScript          @types
   Tree Shaking        None
   ESM                 No
 
-  ⚠️ Warning
-
-  Moment.js is considered legacy. The ecosystem has
-  moved to lighter, immutable alternatives.
+  Warning: Moment.js is considered legacy.
 
   Suggested:
-  • dayjs - 2KB immutable date library
-  • date-fns - Modern modular date utility
-  • luxon - Powerful date library by Moment team
+  - dayjs - 2KB immutable date library
+  - date-fns - Modern modular date utility
+  - luxon - Powerful date library by Moment team
 
   Reasons:
-  · 72KB bundle size
-  · Mutable API causes bugs
-  · No tree-shaking
-  · Ecosystem has moved on
+  - 72KB bundle size
+  - Mutable API causes bugs
+  - No tree-shaking
+  - Ecosystem has moved on
 ```
 
 ## Features
 
-- **📊 Package Analysis** - Health scores, bundle impact, DX quality
-- **🧠 Smart Install** - Warns before problematic installs, suggests alternatives
-- **⚖️ Package Comparison** - Side-by-side comparison tables
-- **📖 Package Explanations** - Understand why packages exist and why ecosystems shift
-- **🔍 Framework Detection** - Adapts recommendations to your stack (Next.js, Vite, etc.)
-- **🔎 Dependency Audit** - Scan all dependencies in package.json at once
-- **🤖 CI Mode** - Exit non-zero on issues for CI/CD pipelines
-- **🔌 Plugin System** - Custom rules via JSON plugins
-- **⚙️ Config Support** - Global `~/.npi/config.json` and local `.npirc`
-- **💻 VSCode Extension** - Inline diagnostics and commands in your editor
-- **⚡ Fast** - Intelligent caching, parallel fetching, instant responses
-- **🎨 Beautiful** - Premium terminal UI, screenshot-worthy output
+- **Package Analysis** - Estimated health scores, bundle impact, DX quality
+- **Smart Install** - Warns before problematic installs, suggests alternatives
+- **Package Comparison** - Side-by-side comparison tables
+- **Package Explanations** - Understand why packages exist and why ecosystems shift
+- **Framework Detection** - Adapts recommendations to your stack (Next.js, Vite, etc.)
+- **Project-Aware Rules** - Severity adjusts based on TypeScript, ESM, frontend/backend context
+- **Dependency Audit** - Scan all dependencies in package.json at once (partial failure safe)
+- **CI Mode** - Exit non-zero on issues for CI/CD pipelines with stable JSON schema
+- **Plugin System** - Custom rules via validated JSON plugins
+- **Typosquatting Detection** - Warns if a package name looks suspiciously similar to a popular one
+- **License Risk Detection** - Flags restrictive licenses (GPL, AGPL, etc.)
+- **Config & Cache Management** - Global/local config, cache commands
+- **VSCode Extension** - Inline diagnostics and commands in your editor
 
 ## Install
 
@@ -104,14 +96,17 @@ pnpm add -g @dasepmoch/npi
 bun add -g @dasepmoch/npi
 ```
 
+Requires Node.js >= 18.
+
 ## Usage
 
 ### Analyze a package
 
 ```bash
 npi lodash
-npi react
-npi express
+npi react@latest
+npi @scope/package@1.2.3
+npi express --json
 ```
 
 ### Smart install
@@ -120,15 +115,16 @@ npi express
 npi install axios
 npi install lodash --dev
 npi i moment
+npi install react@18
 ```
 
 The smart install flow:
 1. Analyzes the package
-2. Shows health & bundle scores
-3. Warns if problematic
+2. Shows estimated health & bundle scores
+3. Warns if problematic (deprecated, legacy, typosquat risk)
 4. Suggests alternatives
 5. Asks for confirmation
-6. Installs your choice
+6. Installs your choice via detected package manager
 
 ### Compare packages
 
@@ -146,13 +142,6 @@ npi why lodash
 npi why request
 ```
 
-Understand:
-- Why developers used it
-- Why the ecosystem moved away
-- Current sentiment
-- Modern alternatives
-- Migration recommendations
-
 ### Audit dependencies
 
 ```bash
@@ -161,7 +150,7 @@ npi audit --severity warning
 npi audit --json
 ```
 
-Scans all dependencies in your `package.json` and reports issues.
+Scans all dependencies in your `package.json`. Continues even if some packages fail to analyze.
 
 ### CI mode
 
@@ -174,11 +163,28 @@ npi check --json
 Designed for CI/CD pipelines:
 - Exits with code 0 if all dependencies pass
 - Exits with code 1 if issues are found at or above the threshold
-- `--json` output for machine parsing
+- JSON output includes `schemaVersion` for stability
 
-Example in GitHub Actions:
 ```yaml
 - run: npx @dasepmoch/npi check --severity warning
+```
+
+### Manage config
+
+```bash
+npi config                     # Show current config
+npi config get cache.ttl       # Get a specific value
+npi config set cache.ttl 7200  # Set a value
+npi config path                # Show config file location
+npi config reset               # Reset to defaults
+```
+
+### Manage cache
+
+```bash
+npi cache clear   # Clear all cached data
+npi cache stats   # Show cache statistics
+npi cache path    # Show cache directory
 ```
 
 ## Configuration
@@ -202,6 +208,8 @@ Same format as global config. Local settings override global.
 
 Create custom rules by placing JSON files in `~/.npi/plugins/` or `.npi/plugins/` in your project.
 
+Plugins are validated with a schema on load. Invalid plugins are skipped silently.
+
 ```json
 {
   "name": "my-team-rules",
@@ -213,7 +221,8 @@ Create custom rules by placing JSON files in `~/.npi/plugins/` or `.npi/plugins/
       "severity": "critical",
       "match": "jquery",
       "message": "jQuery is not allowed. Use native DOM APIs.",
-      "alternatives": [{ "name": "native DOM", "description": "Built-in APIs" }]
+      "alternatives": [{ "name": "native DOM", "description": "Built-in APIs" }],
+      "reasons": ["Project uses React", "Unnecessary bundle weight"]
     }
   ]
 }
@@ -223,68 +232,40 @@ Supports:
 - Exact package name matching
 - Glob patterns (`moment*`, `@legacy/*`)
 - Multiple match patterns per rule
-- Custom severity levels
-- Alternative suggestions
+- Custom severity levels (`info`, `suggestion`, `warning`, `critical`)
+- Alternative suggestions with reasons
 
-## Philosophy
+## Built-in Rules
 
-Modern JavaScript ecosystems are chaotic. Developers:
-
-- Install packages blindly
-- Follow outdated tutorials
-- Use abandoned dependencies
-- Accidentally bloat bundles
-- Duplicate functionality
-
-**npi** is spellcheck for npm installs. A senior engineer inside your terminal.
-
-It doesn't replace your package manager. It makes you a better decision-maker.
-
-## Architecture
-
-```
-apps/
-  cli/                    → Main CLI application
-  vscode/                 → VSCode extension
-
-packages/
-  core/                   → Types, schemas, config, shared utilities
-  analyzer/               → Package analysis orchestrator
-  npm/                    → npm registry client
-  github/                 → GitHub API client
-  scoring/                → Health, bundle, DX, ecosystem scoring
-  rules/                  → Rule engine + plugin system
-  recommendation-engine/  → Recommendation orchestration
-  explanation-engine/     → Package explanation generation
-  framework-detector/     → Project framework detection
-  formatter/              → Terminal UI rendering
-  cache/                  → Local caching layer
-  package-db/             → Curated package intelligence
-  telemetry/              → Anonymous telemetry (opt-in)
-  benchmarking/           → Performance measurement
-```
-
-Built with:
-- TypeScript (strict mode)
-- ESM-first
-- pnpm workspace + Turborepo
-- Modular, composable, testable
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `npm-deprecated` | Critical | Package is deprecated on npm registry |
+| `possible-typosquat` | Critical | Name is suspiciously similar to a popular package |
+| `request-deprecated` | Critical | Known deprecated packages (request, node-sass) |
+| `license-risk` | Warning | Restrictive license (GPL, AGPL, etc.) |
+| `abandoned-package` | Warning | Not updated in 2+ years |
+| `moment-legacy` | Warning | Known legacy packages with modern alternatives |
+| `large-bundle-frontend` | Warning | Large bundle in frontend projects |
+| `no-esm-in-esm-project` | Warning | CJS package in ESM project |
+| `no-types` | Info/Warning | No TypeScript types (warning in TS projects) |
+| `too-many-deps` | Warning | 15+ direct dependencies |
+| `single-maintainer` | Info | Bus factor = 1 |
 
 ## Scoring System
 
-> **Note:** Scores are heuristic estimates based on npm registry metadata, GitHub signals, and curated rules. They are not absolute measures of quality.
+> Scores are heuristic estimates based on npm registry metadata, GitHub signals, and curated rules. They are not absolute measures of quality.
 
 ### Estimated Health Score (0-100)
 Evaluates release frequency, issue ratio, contributor count, commit velocity, maintenance activity, and bus factor.
 
 ### Bundle Impact (Estimated)
-Estimates install size, transitive dependencies, tree-shaking quality, and runtime overhead.
+Estimates install size, transitive dependencies, tree-shaking quality, and runtime overhead. Not measured from actual bundler output.
 
 ### DX Score (Heuristic)
 Analyzes TypeScript support, ESM compatibility, documentation quality, and API ergonomics.
 
 ### Ecosystem Score
-Detects legacy packages, deprecated ecosystems, migration trends, and modern alternatives.
+Detects legacy packages, deprecated ecosystems, migration trends, and modern alternatives based on curated data and npm/GitHub signals.
 
 ## Limitations
 
@@ -294,30 +275,39 @@ Detects legacy packages, deprecated ecosystems, migration trends, and modern alt
 - TypeScript support detection uses heuristics when `@types/*` can't be verified.
 - This is not a replacement for `npm audit` or professional security review.
 - Stable packages that rarely update may score lower on maintenance metrics.
+- Transitive dependency analysis is estimated, not derived from lockfiles.
 
-## Roadmap
+## Architecture
 
-- [ ] AI recommendation layer
-- [ ] Lockfile analysis
-- [ ] Dependency graph visualization
-- [ ] Organization package policies
-- [ ] Web dashboard
-- [ ] `npi migrate` command (auto-migration scripts)
+```
+apps/
+  cli/         Main CLI application
+  vscode/      VSCode extension
+
+packages/
+  core/        Types, schemas, config, errors
+  analyzer/    Package analysis orchestrator
+  npm/         npm registry client
+  github/      GitHub API client
+  scoring/     Health, bundle, DX, ecosystem scoring
+  rules/       Rule engine + plugin system + typosquat detection
+  formatter/   Terminal UI rendering
+  cache/       Local caching layer
+```
+
+Built with:
+- TypeScript (strict mode)
+- ESM-first
+- pnpm workspace + Turborepo
+- Vitest for testing
 
 ## Contributing
 
 ```bash
-# Clone
 git clone https://github.com/dasepmoch/npi.git
 cd npi
-
-# Install
 pnpm install
-
-# Build
 pnpm build
-
-# Test
 pnpm test
 ```
 

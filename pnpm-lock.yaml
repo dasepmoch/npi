@@ -104,7 +104,7 @@ importers:
         specifier: ^1.85.0
         version: 1.120.0
       '@vscode/vsce':
-        specifier: ^3.9.1
+        specifier: ^3.3.2
         version: 3.9.1
       esbuild:
         specifier: ^0.28.0
@@ -252,6 +252,9 @@ importers:
       '@npi/core':
         specifier: workspace:*
         version: link:../core
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
     devDependencies:
       typescript:
         specifier: ^5.4.0

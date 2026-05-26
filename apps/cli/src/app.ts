@@ -5,7 +5,10 @@ import { compareCommand } from './commands/compare.js';
 import { whyCommand } from './commands/why.js';
 import { auditCommand } from './commands/audit.js';
 import { checkCommand } from './commands/check.js';
+import { configCommand } from './commands/config.js';
+import { cacheCommand } from './commands/cache.js';
 import { showBanner } from './ui/banner.js';
+import { parsePackageSpec } from './utils/package-spec.js';
 
 export function createApp() {
   const cli = cac('npi');
@@ -20,7 +23,8 @@ export function createApp() {
         cli.outputHelp();
         return;
       }
-      await analyzeCommand(packageName, options);
+      const spec = parsePackageSpec(packageName);
+      await analyzeCommand(spec.name, { ...options, version: spec.version });
     });
 
   cli
@@ -30,7 +34,8 @@ export function createApp() {
     .option('--yes', 'Skip confirmation')
     .option('--dev', 'Install as devDependency')
     .action(async (packageName: string, options: Record<string, unknown>) => {
-      await installCommand(packageName, options);
+      const spec = parsePackageSpec(packageName);
+      await installCommand(spec.name, { ...options, version: spec.version });
     });
 
   cli
@@ -69,6 +74,18 @@ export function createApp() {
         json: options['json'] as boolean | undefined,
         path: options['path'] as string | undefined,
       });
+    });
+
+  cli
+    .command('config [action] [key] [value]', 'Manage configuration')
+    .action(async (action: string | undefined, key: string | undefined, value: string | undefined) => {
+      await configCommand(action, key, value);
+    });
+
+  cli
+    .command('cache [action]', 'Manage cache')
+    .action(async (action: string | undefined) => {
+      await cacheCommand(action);
     });
 
   cli.help();

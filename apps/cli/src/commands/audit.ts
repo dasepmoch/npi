@@ -71,7 +71,7 @@ export async function auditCommand(options: AuditOptions): Promise<void> {
   }
 
   if (options.json) {
-    console.log(JSON.stringify({ total: allDeps.length, issues, results }, null, 2));
+    console.log(JSON.stringify({ schemaVersion: '1.0', total: allDeps.length, issues, results }, null, 2));
     return;
   }
 

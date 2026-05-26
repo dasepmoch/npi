@@ -1,4 +1,5 @@
 import type { Rule } from './engine.js';
+import { detectTyposquat } from './typosquat.js';
 
 export const antiPatternRules: Rule[] = [
   {
@@ -90,12 +91,17 @@ export const antiPatternRules: Rule[] = [
     evaluate: (ctx) => {
       if (ctx.analysis.dx.typescript !== 'none') return { triggered: false };
 
+      // Severity increases in TypeScript projects
+      const severity = ctx.project?.typescript ? 'warning' : 'info';
+
       return {
         triggered: true,
         recommendation: {
           package: ctx.analysis.package.name,
-          severity: 'info',
-          message: 'This package has no TypeScript type definitions. DX may be limited.',
+          severity,
+          message: ctx.project?.typescript
+            ? 'This package has no TypeScript types. You will need manual type declarations.'
+            : 'This package has no TypeScript type definitions. DX may be limited.',
           alternatives: [],
           reasons: [
             'No IntelliSense support',
@@ -155,6 +161,121 @@ export const antiPatternRules: Rule[] = [
             'Limited review process',
           ],
           category: 'maintenance',
+        },
+      };
+    },
+  },
+  {
+    id: 'no-esm-in-esm-project',
+    name: 'CJS Package in ESM Project',
+    description: 'Package does not support ESM in an ESM project',
+    severity: 'warning',
+    evaluate: (ctx) => {
+      if (ctx.analysis.dx.esm) return { triggered: false };
+      if (!ctx.project?.esm) return { triggered: false };
+
+      return {
+        triggered: true,
+        recommendation: {
+          package: ctx.analysis.package.name,
+          severity: 'warning',
+          message: 'This CJS-only package may cause issues in your ESM project. Consider an ESM-compatible alternative.',
+          alternatives: [],
+          reasons: [
+            'No tree-shaking possible',
+            'May require import workarounds',
+            'Incompatible with pure ESM projects',
+          ],
+          category: 'bundle-size',
+        },
+      };
+    },
+  },
+  {
+    id: 'large-bundle-frontend',
+    name: 'Large Bundle in Frontend Project',
+    description: 'Large package in a frontend/client-heavy project',
+    severity: 'warning',
+    evaluate: (ctx) => {
+      const frontendFrameworks = ['nextjs', 'vite', 'astro', 'nuxt', 'remix'];
+      if (!ctx.project || !frontendFrameworks.includes(ctx.project.framework)) {
+        return { triggered: false };
+      }
+      if (ctx.analysis.bundle.level !== 'high' && ctx.analysis.bundle.level !== 'critical') {
+        return { triggered: false };
+      }
+
+      return {
+        triggered: true,
+        recommendation: {
+          package: ctx.analysis.package.name,
+          severity: 'warning',
+          message: `This package has ${ctx.analysis.bundle.level} bundle impact. In a ${ctx.project.framework} project, this may significantly affect client-side performance.`,
+          alternatives: [],
+          reasons: [
+            `${ctx.analysis.bundle.level} bundle impact`,
+            `Frontend project (${ctx.project.framework})`,
+            'May slow down page load',
+            'Consider lighter alternatives',
+          ],
+          category: 'bundle-size',
+        },
+      };
+    },
+  },
+  {
+    id: 'possible-typosquat',
+    name: 'Possible Typosquat',
+    description: 'Package name is suspiciously similar to a popular package',
+    severity: 'critical',
+    evaluate: (ctx) => {
+      const intended = detectTyposquat(ctx.analysis.package.name);
+      if (!intended) return { triggered: false };
+
+      return {
+        triggered: true,
+        recommendation: {
+          package: ctx.analysis.package.name,
+          severity: 'critical',
+          message: `This package name is very similar to "${intended}". This could be a typosquatting attempt. Did you mean "${intended}"?`,
+          alternatives: [{ name: intended, description: `The popular package you likely intended`, advantages: [] }],
+          reasons: [
+            `Name is suspiciously similar to "${intended}"`,
+            'Typosquatting is a common supply chain attack vector',
+            'Verify this is the intended package before installing',
+          ],
+          category: 'security',
+        },
+      };
+    },
+  },
+  {
+    id: 'license-risk',
+    name: 'Restrictive License',
+    description: 'Package has a potentially restrictive license',
+    severity: 'warning',
+    evaluate: (ctx) => {
+      const license = ctx.analysis.package.license.toLowerCase();
+      const restrictive = ['gpl', 'agpl', 'lgpl', 'sspl', 'bsl', 'elastic'];
+      const isRestrictive = restrictive.some((r) => license.includes(r));
+
+      if (!isRestrictive) return { triggered: false };
+      if (license === 'unknown') return { triggered: false };
+
+      return {
+        triggered: true,
+        recommendation: {
+          package: ctx.analysis.package.name,
+          severity: 'warning',
+          message: `This package uses a "${ctx.analysis.package.license}" license which may have copyleft or commercial restrictions.`,
+          alternatives: [],
+          reasons: [
+            `License: ${ctx.analysis.package.license}`,
+            'May require you to open-source your code',
+            'May have commercial use restrictions',
+            'Consult legal counsel for production use',
+          ],
+          category: 'security',
         },
       };
     },

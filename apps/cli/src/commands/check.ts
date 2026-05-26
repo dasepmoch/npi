@@ -88,6 +88,7 @@ export async function checkCommand(options: CheckOptions): Promise<void> {
 
   if (options.json) {
     console.log(JSON.stringify({
+      schemaVersion: '1.0',
       packages: allDeps.length,
       issues,
       passed: issues.length === 0,

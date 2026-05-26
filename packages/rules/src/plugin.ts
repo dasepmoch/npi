@@ -2,8 +2,29 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { existsSync } from 'node:fs';
+import { z } from 'zod';
 import type { Rule } from './engine.js';
 import type { Severity } from '@npi/core';
+
+const PluginRuleSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().optional().default(''),
+  severity: z.enum(['info', 'suggestion', 'warning', 'critical']),
+  match: z.union([z.string(), z.array(z.string())]),
+  message: z.string().min(1),
+  alternatives: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+  })).optional(),
+  reasons: z.array(z.string()).optional(),
+});
+
+const PluginSchema = z.object({
+  name: z.string().min(1),
+  version: z.string().min(1),
+  rules: z.array(PluginRuleSchema),
+});
 
 /**
  * Plugin definition for custom rules.
@@ -61,12 +82,14 @@ async function loadPluginsFromDir(dir: string): Promise<Rule[]> {
 
       try {
         const content = await readFile(join(dir, file), 'utf-8');
-        const plugin = JSON.parse(content) as NpiPlugin;
+        const plugin = JSON.parse(content);
 
-        if (plugin.rules && Array.isArray(plugin.rules)) {
-          for (const ruleDef of plugin.rules) {
-            rules.push(pluginRuleToRule(ruleDef));
-          }
+        const parsed = PluginSchema.safeParse(plugin);
+        if (!parsed.success) continue; // skip invalid plugins
+        const validPlugin = parsed.data;
+
+        for (const ruleDef of validPlugin.rules) {
+          rules.push(pluginRuleToRule(ruleDef as PluginRuleDefinition));
         }
       } catch {
         // Skip invalid plugin files
