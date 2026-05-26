@@ -1,6 +1,6 @@
 {
   "name": "@dasepmoch/npi",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "type": "module",
   "description": "Intelligent npm install assistant - think before you install",
   "bin": {
