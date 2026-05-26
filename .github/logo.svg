@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
-  <rect width="80" height="80" rx="16" fill="#0a0a0a"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" fill="none">
+  <rect x="0" y="0" width="80" height="80" rx="16" ry="16" fill="#0a0a0a"/>
   <text x="40" y="36" dominant-baseline="central" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="28" fill="#ffffff">npi</text>
-  <rect x="12" y="52" width="56" height="3" rx="1.5" fill="#3b82f6" opacity="0.8"/>
+  <rect x="12" y="52" width="56" height="3" rx="1.5" ry="1.5" fill="#3b82f6" opacity="0.8"/>
 </svg>
