@@ -2,8 +2,9 @@ import pc from 'picocolors';
 import { PackageAnalyzer } from '@npi/analyzer';
 import { formatComparison } from '@npi/formatter';
 import { NetworkError } from '@npi/core';
-import type { PackageComparison } from '@npi/core';
+import type { PackageComparison, PackageAnalysis } from '@npi/core';
 import { withSpinner } from '../ui/spinner.js';
+import { parsePackageSpec } from '../utils/package-spec.js';
 
 export async function compareCommand(packages: string[]): Promise<void> {
   if (packages.length < 2) {
@@ -19,10 +20,18 @@ export async function compareCommand(packages: string[]): Promise<void> {
 
   try {
     const analyzer = new PackageAnalyzer();
+    const specs = packages.map(parsePackageSpec);
 
     const analyses = await withSpinner(
       `Comparing ${packages.map((p) => pc.bold(p)).join(', ')}...`,
-      () => analyzer.analyzeMultiple(packages)
+      async () => {
+        const results: PackageAnalysis[] = [];
+        for (const spec of specs) {
+          const result = await analyzer.analyze(spec.name, { version: spec.version });
+          results.push(result);
+        }
+        return results;
+      }
     );
 
     // Determine contextual winners

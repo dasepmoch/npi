@@ -3,9 +3,9 @@ import { NpmClient, type NpmRegistryResponse, type NpmVersionResponse } from './
 
 export async function fetchPackageMetadata(
   packageName: string,
-  client?: NpmClient
+  options?: { client?: NpmClient; version?: string }
 ): Promise<NpmPackageMetadata> {
-  const npmClient = client ?? new NpmClient();
+  const npmClient = options?.client ?? new NpmClient();
 
   // Fetch package data and downloads in parallel
   const [data, downloads] = await Promise.all([
@@ -13,21 +13,93 @@ export async function fetchPackageMetadata(
     npmClient.getDownloads(packageName),
   ]);
 
-  return transformToMetadata(data, downloads.downloads);
+  return transformToMetadata(data, downloads.downloads, options?.version);
+}
+
+/**
+ * Resolve a version specifier to an actual version from available versions.
+ * Handles: exact versions, dist-tags, and simple major version matching.
+ */
+function resolveVersion(data: NpmRegistryResponse, requested?: string): string | undefined {
+  if (!requested) return undefined;
+
+  // Check if it's a dist-tag (latest, next, beta, etc.)
+  if (data['dist-tags']?.[requested]) {
+    return data['dist-tags'][requested];
+  }
+
+  // Check if it's an exact version match
+  if (data.versions?.[requested]) {
+    return requested;
+  }
+
+  // Try to match major version (e.g., "18" matches "18.x.x")
+  const versions = Object.keys(data.versions ?? {});
+
+  // If requested looks like just a number, match major version
+  if (/^\d+$/.test(requested)) {
+    const major = parseInt(requested, 10);
+    const matching = versions
+      .filter((v) => {
+        const parts = v.split('.');
+        return parseInt(parts[0], 10) === major && !v.includes('-');
+      })
+      .sort(compareVersions);
+    return matching[matching.length - 1]; // latest matching major
+  }
+
+  // If requested is major.minor, match
+  if (/^\d+\.\d+$/.test(requested)) {
+    const [reqMajor, reqMinor] = requested.split('.').map(Number);
+    const matching = versions
+      .filter((v) => {
+        const parts = v.split('.').map(Number);
+        return parts[0] === reqMajor && parts[1] === reqMinor && !v.includes('-');
+      })
+      .sort(compareVersions);
+    return matching[matching.length - 1];
+  }
+
+  // If it starts with ^ or ~, strip and try exact
+  const stripped = requested.replace(/^[\^~>=<]*/, '');
+  if (data.versions?.[stripped]) {
+    return stripped;
+  }
+
+  // Fallback: return undefined (will use latest)
+  return undefined;
+}
+
+/**
+ * Simple semver comparison for sorting.
+ */
+function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] ?? 0) !== (pb[i] ?? 0)) {
+      return (pa[i] ?? 0) - (pb[i] ?? 0);
+    }
+  }
+  return 0;
 }
 
 function transformToMetadata(
   data: NpmRegistryResponse,
-  weeklyDownloads: number
+  weeklyDownloads: number,
+  requestedVersion?: string
 ): NpmPackageMetadata {
   const latestVersion = data['dist-tags']?.['latest'] ?? '';
-  const latest = data.versions?.[latestVersion];
+
+  // Resolve the target version
+  const targetVersion = resolveVersion(data, requestedVersion) ?? latestVersion;
+  const latest = data.versions?.[targetVersion];
   const versions = Object.keys(data.versions ?? {});
   const times = data.time ?? {};
 
   return {
     name: data.name,
-    version: latestVersion,
+    version: targetVersion,
     description: data.description ?? '',
     license: data.license ?? 'Unknown',
     homepage: data.homepage,
@@ -38,7 +110,7 @@ function transformToMetadata(
     dependencies: latest?.dependencies ?? {},
     devDependencies: latest?.devDependencies ?? {},
     peerDependencies: latest?.peerDependencies ?? {},
-    lastPublish: new Date(times[latestVersion] ?? Date.now()),
+    lastPublish: new Date(times[targetVersion] ?? Date.now()),
     created: new Date(times['created'] ?? Date.now()),
     weeklyDownloads,
     versions,

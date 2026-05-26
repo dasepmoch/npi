@@ -35,9 +35,10 @@ export async function checkCommand(options: CheckOptions): Promise<void> {
     process.exit(1);
   }
 
-  const deps = Object.keys(pkgJson.dependencies ?? {});
-  const devDeps = Object.keys(pkgJson.devDependencies ?? {});
-  const allDeps = [...deps, ...devDeps];
+  const deps = Object.entries(pkgJson.dependencies ?? {}) as [string, string][];
+  const devDeps = Object.entries(pkgJson.devDependencies ?? {}) as [string, string][];
+  const allEntries = [...deps, ...devDeps];
+  const allDeps = allEntries.map(([name]) => name);
 
   if (allDeps.length === 0) {
     if (options.json) {
@@ -54,10 +55,13 @@ export async function checkCommand(options: CheckOptions): Promise<void> {
 
   let results;
   try {
-    results = await analyzer.analyzeMultiple(allDeps, {
-      ignore: config.ignore,
-      ruleOverrides: config.rules as Record<string, string>,
-    });
+    results = await analyzer.analyzeMultipleWithVersions(
+      allEntries.map(([name, range]) => ({ name, version: cleanVersionRange(range) })),
+      {
+        ignore: config.ignore,
+        ruleOverrides: config.rules as Record<string, string>,
+      }
+    );
   } catch (error) {
     if (options.json) {
       console.log(JSON.stringify({ error: error instanceof Error ? error.message : 'Analysis failed', exitCode: 1 }));
@@ -136,4 +140,12 @@ function severityLevel(severity: Severity): number {
     case 'suggestion': return 2;
     case 'info': return 3;
   }
+}
+
+
+function cleanVersionRange(range: string): string | undefined {
+  // Strip common prefixes to get a usable version hint
+  const cleaned = range.replace(/^[\^~>=<\s]*/, '');
+  if (!cleaned || cleaned === '*' || cleaned === 'latest') return undefined;
+  return cleaned;
 }

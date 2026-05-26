@@ -11,6 +11,7 @@ export interface AnalyzerOptions {
   project?: ProjectContext;
   ignore?: string[];
   ruleOverrides?: Record<string, string>;
+  version?: string;
 }
 
 const MAX_CONCURRENT = 5;
@@ -46,9 +47,10 @@ export class PackageAnalyzer {
       throw new Error(`Invalid package name: "${packageName}"`);
     }
 
+    const versionKey = options?.version ?? 'latest';
     const cacheKey = options?.project
-      ? `analysis:${packageName}:${options.project.framework}:${options.project.typescript}`
-      : `analysis:${packageName}`;
+      ? `analysis:${packageName}@${versionKey}:${options.project.framework}:${options.project.typescript}`
+      : `analysis:${packageName}@${versionKey}`;
 
     // Check cache
     if (options?.cache !== false) {
@@ -57,7 +59,7 @@ export class PackageAnalyzer {
     }
 
     // Fetch npm metadata (required)
-    const npmMetadata = await fetchPackageMetadata(packageName);
+    const npmMetadata = await fetchPackageMetadata(packageName, { version: options?.version });
 
     // Fetch GitHub metadata (optional, non-blocking)
     const githubMetadata = npmMetadata.repository
@@ -130,6 +132,36 @@ export class PackageAnalyzer {
     }
 
     // Store errors for callers that want to check them
+    (results as PackageAnalysis[] & { _errors?: typeof errors })._errors = errors;
+    return results;
+  }
+
+  async analyzeMultipleWithVersions(
+    packages: Array<{ name: string; version?: string }>,
+    options?: Omit<AnalyzerOptions, 'version'>
+  ): Promise<PackageAnalysis[]> {
+    const results: PackageAnalysis[] = [];
+    const errors: Array<{ package: string; error: string }> = [];
+
+    for (let i = 0; i < packages.length; i += MAX_CONCURRENT) {
+      const batch = packages.slice(i, i + MAX_CONCURRENT);
+      const batchResults = await Promise.allSettled(
+        batch.map((pkg) => this.analyze(pkg.name, { ...options, version: pkg.version }))
+      );
+
+      for (let j = 0; j < batchResults.length; j++) {
+        const result = batchResults[j];
+        if (result.status === 'fulfilled') {
+          results.push(result.value);
+        } else {
+          errors.push({
+            package: batch[j].name,
+            error: result.reason instanceof Error ? result.reason.message : 'Unknown error',
+          });
+        }
+      }
+    }
+
     (results as PackageAnalysis[] & { _errors?: typeof errors })._errors = errors;
     return results;
   }

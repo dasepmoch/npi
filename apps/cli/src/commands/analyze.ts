@@ -20,6 +20,7 @@ export async function analyzeCommand(
         cache: options['cache'] !== false && config.cache.enabled,
         cacheTtl: config.cache.ttl,
         project,
+        version: options['version'] as string | undefined,
       })
     );
 

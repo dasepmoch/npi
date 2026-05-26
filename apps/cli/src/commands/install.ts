@@ -11,6 +11,12 @@ export async function installCommand(
   packageName: string,
   options: Record<string, unknown>
 ): Promise<void> {
+  // Validate package name for safety
+  if (!isValidInstallInput(packageName)) {
+    console.error(`\n  ${pc.red('x')} Invalid package name: "${packageName}"\n`);
+    process.exit(1);
+  }
+
   try {
     const config = await loadConfig();
     const analyzer = new PackageAnalyzer({ cacheTtl: config.cache.ttl });
@@ -22,6 +28,7 @@ export async function installCommand(
       () => analyzer.analyze(packageName, {
         cache: options['cache'] !== false && config.cache.enabled,
         project,
+        version: options['version'] as string | undefined,
       })
     );
 
@@ -123,4 +130,20 @@ function handleError(error: unknown, packageName: string): never {
     console.error(`\n  ${pc.red('✗')} An unexpected error occurred.\n`);
   }
   process.exit(1);
+}
+
+
+/**
+ * Validate install input to prevent command injection.
+ * Rejects inputs containing shell metacharacters.
+ */
+function isValidInstallInput(input: string): boolean {
+  // Reject shell metacharacters
+  const dangerous = /[;&|`$(){}[\]!#~<>\\]/;
+  if (dangerous.test(input)) return false;
+  // Reject empty or too long
+  if (!input || input.length > 214) return false;
+  // Must look like a valid npm package name (with optional version)
+  const valid = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*(@[^\s]*)?$/;
+  return valid.test(input);
 }
