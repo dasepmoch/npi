@@ -72,6 +72,9 @@ export class PackageAnalyzer {
     const dx = calculateDxScore(npmMetadata, githubMetadata);
     const ecosystem = calculateEcosystemScore(npmMetadata, githubMetadata);
 
+    // Calculate confidence
+    const confidence = computeConfidence(npmMetadata, githubMetadata);
+
     // Build analysis
     const analysis: PackageAnalysis = {
       package: npmMetadata,
@@ -82,6 +85,7 @@ export class PackageAnalyzer {
       ecosystem,
       recommendations: [],
       analyzedAt: new Date(),
+      confidence,
     };
 
     // Ensure plugins are loaded before evaluating rules
@@ -96,6 +100,9 @@ export class PackageAnalyzer {
       ruleOverrides: options?.ruleOverrides,
     });
     analysis.recommendations = recommendations;
+
+    // Compute decision
+    analysis.decision = computeDecision(analysis);
 
     // Cache result (fire-and-forget, don't block on cache write)
     if (options?.cache !== false) {
@@ -186,4 +193,32 @@ function isValidPackageName(name: string): boolean {
   // Basic character validation (npm allows lowercase, digits, hyphens, dots, underscores, tildes)
   const validPattern = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
   return validPattern.test(name);
+}
+
+function computeConfidence(
+  npm: { weeklyDownloads: number; repository?: string },
+  github?: { commitFrequency: number; contributors: number }
+): { level: 'low' | 'medium' | 'high'; missingSignals: string[] } {
+  const missing: string[] = [];
+
+  if (!github) missing.push('GitHub metadata unavailable');
+  if (github && github.commitFrequency === 0) missing.push('Commit activity unavailable');
+  if (!npm.repository) missing.push('No repository URL');
+  if (npm.weeklyDownloads === 0) missing.push('Download data unavailable');
+
+  const level = missing.length === 0 ? 'high'
+    : missing.length <= 2 ? 'medium'
+    : 'low';
+
+  return { level, missingSignals: missing };
+}
+
+function computeDecision(analysis: PackageAnalysis): 'recommended' | 'acceptable' | 'use-with-caution' | 'avoid' {
+  const hasCritical = analysis.recommendations.some((r) => r.severity === 'critical');
+  const hasWarning = analysis.recommendations.some((r) => r.severity === 'warning');
+
+  if (hasCritical || analysis.package.deprecated) return 'avoid';
+  if (hasWarning || analysis.health.overall < 40) return 'use-with-caution';
+  if (analysis.health.overall >= 70 && !hasWarning) return 'recommended';
+  return 'acceptable';
 }

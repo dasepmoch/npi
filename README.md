@@ -277,6 +277,14 @@ Detects legacy packages, deprecated ecosystems, migration trends, and modern alt
 - Stable packages that rarely update may score lower on maintenance metrics.
 - Transitive dependency analysis is estimated, not derived from lockfiles.
 
+## What npi is not
+
+- Not a replacement for `npm audit` or security scanning tools
+- Not a guaranteed bundle size analyzer (estimates from metadata)
+- Not a malware scanner
+- Not legal advice for license compliance
+- Not a package manager - it works alongside npm/pnpm/yarn/bun
+
 ## Architecture
 
 ```

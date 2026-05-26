@@ -7,6 +7,7 @@ import { auditCommand } from './commands/audit.js';
 import { checkCommand } from './commands/check.js';
 import { configCommand } from './commands/config.js';
 import { cacheCommand } from './commands/cache.js';
+import { pluginCommand } from './commands/plugin.js';
 import { showBanner } from './ui/banner.js';
 import { parsePackageSpec } from './utils/package-spec.js';
 
@@ -89,6 +90,12 @@ export function createApp() {
     .command('cache [action]', 'Manage cache')
     .action(async (action: string | undefined) => {
       await cacheCommand(action);
+    });
+
+  cli
+    .command('plugin [action]', 'Manage plugins')
+    .action(async (action: string | undefined) => {
+      await pluginCommand(action);
     });
 
   cli.help();

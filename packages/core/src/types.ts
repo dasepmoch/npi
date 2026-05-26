@@ -110,6 +110,20 @@ export type RecommendationCategory =
 
 // ─── Analysis Result ─────────────────────────────────────────────────────────
 
+export type Decision = 'recommended' | 'acceptable' | 'use-with-caution' | 'avoid';
+
+export interface AnalysisConfidence {
+  level: 'low' | 'medium' | 'high';
+  missingSignals: string[];
+}
+
+export interface SecurityVulnerability {
+  id: string;
+  summary: string;
+  severity: string;
+  fixedVersion?: string;
+}
+
 export interface PackageAnalysis {
   package: NpmPackageMetadata;
   github?: GithubMetadata;
@@ -119,6 +133,9 @@ export interface PackageAnalysis {
   ecosystem: EcosystemScore;
   recommendations: Recommendation[];
   analyzedAt: Date;
+  confidence?: AnalysisConfidence;
+  decision?: Decision;
+  vulnerabilities?: SecurityVulnerability[];
 }
 
 // ─── Comparison ──────────────────────────────────────────────────────────────
