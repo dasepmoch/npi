@@ -9,6 +9,8 @@ export interface AnalyzerOptions {
   cache?: boolean;
   cacheTtl?: number;
   project?: ProjectContext;
+  ignore?: string[];
+  ruleOverrides?: Record<string, string>;
 }
 
 const MAX_CONCURRENT = 5;
@@ -87,6 +89,9 @@ export class PackageAnalyzer {
     const recommendations = this.ruleEngine.evaluate({
       analysis,
       project: options?.project,
+    }, {
+      ignore: options?.ignore,
+      ruleOverrides: options?.ruleOverrides,
     });
     analysis.recommendations = recommendations;
 

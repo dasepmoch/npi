@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PackageAnalyzer } from '@npi/analyzer';
 import type { Severity } from '@npi/core';
+import { loadConfig } from '@npi/core';
 
 export interface CheckOptions {
   severity?: string;
@@ -49,9 +50,14 @@ export async function checkCommand(options: CheckOptions): Promise<void> {
 
   const analyzer = new PackageAnalyzer();
 
+  const config = await loadConfig();
+
   let results;
   try {
-    results = await analyzer.analyzeMultiple(allDeps);
+    results = await analyzer.analyzeMultiple(allDeps, {
+      ignore: config.ignore,
+      ruleOverrides: config.rules as Record<string, string>,
+    });
   } catch (error) {
     if (options.json) {
       console.log(JSON.stringify({ error: error instanceof Error ? error.message : 'Analysis failed', exitCode: 1 }));

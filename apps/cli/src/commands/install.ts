@@ -83,24 +83,33 @@ async function doInstall(
   packageManager: string
 ): Promise<void> {
   const isDev = options['dev'] === true;
+  const isExact = options['exact'] === true;
+  const version = options['version'] as string | undefined;
+  const pkgSpec = version ? `${packageName}@${version}` : packageName;
 
   const commands: Record<string, { cmd: string; args: string[] }> = {
-    npm: { cmd: 'npm', args: ['install', isDev ? '--save-dev' : '--save', packageName] },
-    pnpm: { cmd: 'pnpm', args: ['add', ...(isDev ? ['-D'] : []), packageName] },
-    yarn: { cmd: 'yarn', args: ['add', ...(isDev ? ['-D'] : []), packageName] },
-    bun: { cmd: 'bun', args: ['add', ...(isDev ? ['-d'] : []), packageName] },
+    npm: { cmd: 'npm', args: ['install', isDev ? '--save-dev' : '--save', ...(isExact ? ['--save-exact'] : []), pkgSpec] },
+    pnpm: { cmd: 'pnpm', args: ['add', ...(isDev ? ['-D'] : []), ...(isExact ? ['--save-exact'] : []), pkgSpec] },
+    yarn: { cmd: 'yarn', args: ['add', ...(isDev ? ['-D'] : []), ...(isExact ? ['--exact'] : []), pkgSpec] },
+    bun: { cmd: 'bun', args: ['add', ...(isDev ? ['-d'] : []), ...(isExact ? ['--exact'] : []), pkgSpec] },
   };
 
   const { cmd, args } = commands[packageManager] ?? commands['npm'];
 
+  if (options['dryRun'] === true) {
+    console.log(`\n  ${pc.dim('Dry run - would execute:')}`);
+    console.log(`  ${pc.bold(`${cmd} ${args.join(' ')}`)}\n`);
+    return;
+  }
+
   console.log(`  ${pc.dim(`${cmd} ${args.join(' ')}`)}`);
   console.log('');
 
-  await withSpinner(`Installing ${pc.bold(packageName)}...`, async () => {
+  await withSpinner(`Installing ${pc.bold(pkgSpec)}...`, async () => {
     await execa(cmd, args, { stdio: 'pipe' });
   });
 
-  console.log(`\n  ${pc.green('✓')} Installed ${pc.bold(packageName)}\n`);
+  console.log(`\n  ${pc.green('✓')} Installed ${pc.bold(pkgSpec)}\n`);
 }
 
 function handleError(error: unknown, packageName: string): never {

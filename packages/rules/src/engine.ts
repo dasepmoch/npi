@@ -5,6 +5,11 @@ export interface RuleContext {
   project?: ProjectContext;
 }
 
+export interface RuleEvalOptions {
+  ignore?: string[];
+  ruleOverrides?: Record<string, string>;
+}
+
 export interface RuleResult {
   triggered: boolean;
   recommendation?: Recommendation;
@@ -19,22 +24,39 @@ export interface Rule {
 }
 
 export class RuleEngine {
-  private rules: Rule[] = [];
+  private rules: Map<string, Rule> = new Map();
 
   register(rule: Rule): void {
-    this.rules.push(rule);
+    // Last registered wins (plugin overrides built-in)
+    this.rules.set(rule.id, rule);
   }
 
   registerMany(rules: Rule[]): void {
-    this.rules.push(...rules);
+    for (const rule of rules) {
+      this.register(rule);
+    }
   }
 
-  evaluate(context: RuleContext): Recommendation[] {
+  evaluate(context: RuleContext, options?: RuleEvalOptions): Recommendation[] {
     const recommendations: Recommendation[] = [];
+    const ignoredPackages = new Set(options?.ignore ?? []);
 
-    for (const rule of this.rules) {
+    // Skip if package is in ignore list
+    if (ignoredPackages.has(context.analysis.package.name)) {
+      return [];
+    }
+
+    for (const rule of this.rules.values()) {
+      // Check if rule is turned off via config
+      const ruleOverride = options?.ruleOverrides?.[rule.id];
+      if (ruleOverride === 'off') continue;
+
       const result = rule.evaluate(context);
       if (result.triggered && result.recommendation) {
+        // Apply severity override from config
+        if (ruleOverride) {
+          result.recommendation.severity = ruleOverride as Severity;
+        }
         recommendations.push(result.recommendation);
       }
     }
@@ -53,6 +75,6 @@ export class RuleEngine {
   }
 
   getRules(): Rule[] {
-    return [...this.rules];
+    return [...this.rules.values()];
   }
 }

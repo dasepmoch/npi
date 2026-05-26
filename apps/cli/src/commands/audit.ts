@@ -2,7 +2,7 @@ import pc from 'picocolors';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PackageAnalyzer } from '@npi/analyzer';
-import { formatSize } from '@npi/core';
+import { formatSize, loadConfig } from '@npi/core';
 import type { PackageAnalysis, Severity } from '@npi/core';
 import { withSpinner } from '../ui/spinner.js';
 
@@ -37,12 +37,16 @@ export async function auditCommand(options: AuditOptions): Promise<void> {
 
   console.log(`\n  ${pc.bold('Auditing')} ${allDeps.length} dependencies...\n`);
 
+  const config = await loadConfig();
   const analyzer = new PackageAnalyzer();
   const minSeverity = parseSeverity(options.severity);
 
   const results = await withSpinner(
     `Analyzing ${allDeps.length} packages...`,
-    () => analyzer.analyzeMultiple(allDeps)
+    () => analyzer.analyzeMultiple(allDeps, {
+      ignore: config.ignore,
+      ruleOverrides: config.rules as Record<string, string>,
+    })
   );
 
   // Check for partial failures

@@ -33,6 +33,8 @@ export function createApp() {
     .option('--no-cache', 'Disable cache')
     .option('--yes', 'Skip confirmation')
     .option('--dev', 'Install as devDependency')
+    .option('--exact', 'Save exact version')
+    .option('--dry-run', 'Show what would be installed without installing')
     .action(async (packageName: string, options: Record<string, unknown>) => {
       const spec = parsePackageSpec(packageName);
       await installCommand(spec.name, { ...options, version: spec.version });
@@ -89,7 +91,7 @@ export function createApp() {
     });
 
   cli.help();
-  cli.version('1.1.0');
+  cli.version('1.2.0');
 
   return cli;
 }

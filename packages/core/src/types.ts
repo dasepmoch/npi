@@ -170,6 +170,8 @@ export const NpiConfigSchema = z.object({
   telemetry: z.object({
     enabled: z.boolean().default(false),
   }).default({}),
+  ignore: z.array(z.string()).default([]),
+  rules: z.record(z.enum(['off', 'info', 'suggestion', 'warning', 'critical'])).default({}),
 });
 
 export type NpiConfig = z.infer<typeof NpiConfigSchema>;

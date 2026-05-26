@@ -25,19 +25,14 @@ export async function compareCommand(packages: string[]): Promise<void> {
       () => analyzer.analyzeMultiple(packages)
     );
 
-    // Determine winner based on composite score
-    const sorted = [...analyses].sort((a, b) => {
-      const scoreA = computeCompositeScore(a);
-      const scoreB = computeCompositeScore(b);
-      return scoreB - scoreA;
-    });
-
-    const winner = sorted[0]?.package.name;
+    // Determine contextual winners
+    const winners = computeContextualWinners(analyses);
+    const overallWinner = computeOverallWinner(analyses);
 
     const comparison: PackageComparison = {
       packages: analyses,
-      winner,
-      summary: 'Based on health, DX, and bundle impact analysis.',
+      winner: overallWinner,
+      summary: formatWinnerSummary(winners, overallWinner),
     };
 
     console.log(formatComparison(comparison));
@@ -53,11 +48,59 @@ export async function compareCommand(packages: string[]): Promise<void> {
   }
 }
 
-function computeCompositeScore(analysis: { health: { overall: number }; dx: { overall: number }; bundle: { level: string } }): number {
-  const bundleBonus = analysis.bundle.level === 'minimal' ? 20
-    : analysis.bundle.level === 'low' ? 10
-    : analysis.bundle.level === 'moderate' ? 0
-    : -10;
+interface CategoryWinner {
+  category: string;
+  package: string;
+}
 
-  return analysis.health.overall + analysis.dx.overall + bundleBonus;
+function computeContextualWinners(analyses: { package: { name: string }; health: { overall: number }; dx: { overall: number }; bundle: { level: string; treeShaking: string }; ecosystem: { status: string } }[]): CategoryWinner[] {
+  const winners: CategoryWinner[] = [];
+
+  // Best health
+  const healthSorted = [...analyses].sort((a, b) => b.health.overall - a.health.overall);
+  if (healthSorted[0]) {
+    winners.push({ category: 'Best maintained', package: healthSorted[0].package.name });
+  }
+
+  // Best DX
+  const dxSorted = [...analyses].sort((a, b) => b.dx.overall - a.dx.overall);
+  if (dxSorted[0]) {
+    winners.push({ category: 'Best DX', package: dxSorted[0].package.name });
+  }
+
+  // Smallest bundle
+  const bundleOrder = { minimal: 0, low: 1, moderate: 2, high: 3, critical: 4 };
+  const bundleSorted = [...analyses].sort((a, b) =>
+    (bundleOrder[a.bundle.level as keyof typeof bundleOrder] ?? 4) -
+    (bundleOrder[b.bundle.level as keyof typeof bundleOrder] ?? 4)
+  );
+  if (bundleSorted[0]) {
+    winners.push({ category: 'Smallest bundle', package: bundleSorted[0].package.name });
+  }
+
+  return winners;
+}
+
+function computeOverallWinner(analyses: { package: { name: string }; health: { overall: number }; dx: { overall: number }; bundle: { level: string } }[]): string | undefined {
+  if (analyses.length === 0) return undefined;
+
+  const sorted = [...analyses].sort((a, b) => {
+    const bundleBonus = (level: string) => {
+      if (level === 'minimal') return 20;
+      if (level === 'low') return 10;
+      if (level === 'moderate') return 0;
+      return -10;
+    };
+    const scoreA = a.health.overall + a.dx.overall + bundleBonus(a.bundle.level);
+    const scoreB = b.health.overall + b.dx.overall + bundleBonus(b.bundle.level);
+    return scoreB - scoreA;
+  });
+
+  return sorted[0]?.package.name;
+}
+
+function formatWinnerSummary(winners: CategoryWinner[], overall?: string): string {
+  const lines = winners.map((w) => `${w.category}: ${w.package}`);
+  if (overall) lines.push(`Overall recommendation: ${overall}`);
+  return lines.join('. ');
 }

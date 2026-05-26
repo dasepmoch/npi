@@ -25,6 +25,8 @@ const DEFAULT_CONFIG: NpiConfig = {
   telemetry: {
     enabled: false,
   },
+  ignore: [],
+  rules: {},
 };
 
 /**
@@ -89,6 +91,8 @@ function mergeConfig(base: NpiConfig, override: Partial<NpiConfig>): NpiConfig {
     ui: { ...base.ui, ...override.ui },
     install: { ...base.install, ...override.install },
     telemetry: { ...base.telemetry, ...override.telemetry },
+    ignore: override.ignore ?? base.ignore,
+    rules: { ...base.rules, ...override.rules },
   };
 }
 
