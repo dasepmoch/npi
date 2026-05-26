@@ -3,7 +3,7 @@ import { execa } from 'execa';
 import { PackageAnalyzer } from '@npi/analyzer';
 import { formatAnalysis } from '@npi/formatter';
 import { detectProjectContext } from '@npi/framework-detector';
-import { PackageNotFoundError, NetworkError } from '@npi/core';
+import { PackageNotFoundError, NetworkError, loadConfig } from '@npi/core';
 import { withSpinner } from '../ui/spinner.js';
 import { confirm, select } from '../ui/prompt.js';
 
@@ -12,14 +12,15 @@ export async function installCommand(
   options: Record<string, unknown>
 ): Promise<void> {
   try {
-    const analyzer = new PackageAnalyzer();
+    const config = await loadConfig();
+    const analyzer = new PackageAnalyzer({ cacheTtl: config.cache.ttl });
     const project = await detectProjectContext().catch(() => undefined);
 
     // Step 1: Analyze
     const analysis = await withSpinner(
       `Analyzing ${pc.bold(packageName)}...`,
       () => analyzer.analyze(packageName, {
-        cache: options['cache'] !== false,
+        cache: options['cache'] !== false && config.cache.enabled,
         project,
       })
     );

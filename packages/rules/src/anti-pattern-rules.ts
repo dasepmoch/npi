@@ -2,6 +2,32 @@ import type { Rule } from './engine.js';
 
 export const antiPatternRules: Rule[] = [
   {
+    id: 'npm-deprecated',
+    name: 'Deprecated by Author',
+    description: 'Package is marked as deprecated on npm by its author',
+    severity: 'critical',
+    evaluate: (ctx) => {
+      const deprecated = ctx.analysis.package.deprecated;
+      if (!deprecated) return { triggered: false };
+
+      return {
+        triggered: true,
+        recommendation: {
+          package: ctx.analysis.package.name,
+          severity: 'critical',
+          message: `This package is deprecated on npm: "${deprecated}"`,
+          alternatives: [],
+          reasons: [
+            'Marked deprecated by the package author',
+            'No future updates or security patches',
+            'Should not be used in new projects',
+          ],
+          category: 'maintenance',
+        },
+      };
+    },
+  },
+  {
     id: 'too-many-deps',
     name: 'Excessive Dependencies',
     description: 'Package has too many direct dependencies',

@@ -56,9 +56,19 @@ export async function checkCommand(options: CheckOptions): Promise<void> {
     if (options.json) {
       console.log(JSON.stringify({ error: error instanceof Error ? error.message : 'Analysis failed', exitCode: 1 }));
     } else {
-      console.error(`${pc.red('✗')} Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(`${pc.red('x')} Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     process.exit(1);
+  }
+
+  // Report partial failures
+  const errors = (results as unknown as { _errors?: Array<{ package: string; error: string }> })._errors ?? [];
+  if (errors.length > 0 && !options.json) {
+    console.log(`${pc.yellow('!')} ${errors.length} package(s) failed to analyze:`);
+    for (const err of errors) {
+      console.log(`  ${pc.dim('-')} ${err.package}: ${err.error}`);
+    }
+    console.log('');
   }
 
   // Collect issues at or above fail severity

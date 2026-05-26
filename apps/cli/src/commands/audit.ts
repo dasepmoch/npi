@@ -45,6 +45,16 @@ export async function auditCommand(options: AuditOptions): Promise<void> {
     () => analyzer.analyzeMultiple(allDeps)
   );
 
+  // Check for partial failures
+  const errors = (results as unknown as { _errors?: Array<{ package: string; error: string }> })._errors ?? [];
+  if (errors.length > 0) {
+    console.log(`  ${pc.yellow('!')} ${errors.length} package(s) failed to analyze:`);
+    for (const err of errors) {
+      console.log(`     ${pc.dim('-')} ${err.package}: ${err.error}`);
+    }
+    console.log('');
+  }
+
   // Collect all issues
   const issues: Array<{ pkg: string; severity: Severity; message: string }> = [];
 

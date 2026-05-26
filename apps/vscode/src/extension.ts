@@ -39,6 +39,35 @@ export function deactivate() {
   diagnosticCollection?.dispose();
 }
 
+// ─── HTML Security ───────────────────────────────────────────────────────────
+
+/**
+ * Escape HTML to prevent injection from external metadata.
+ * All data from npm/GitHub/plugins MUST pass through this before rendering.
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+/**
+ * Generate a nonce for Content Security Policy.
+ */
+function getNonce(): string {
+  let text = '';
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 32; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+}
+
+// ─── Commands ────────────────────────────────────────────────────────────────
+
 async function analyzePackageCommand() {
   const packageName = await vscode.window.showInputBox({
     prompt: 'Enter package name to analyze',
@@ -82,7 +111,7 @@ async function auditDependenciesCommand() {
 
         const issues = results.flatMap((r) => r.recommendations);
         if (issues.length === 0) {
-          vscode.window.showInformationMessage('✓ All dependencies look healthy!');
+          vscode.window.showInformationMessage('All dependencies look healthy!');
         } else {
           vscode.window.showWarningMessage(
             `Found ${issues.length} issue(s) across ${deps.length} dependencies.`
@@ -150,6 +179,8 @@ async function whyPackageCommand() {
   );
 }
 
+// ─── Diagnostics ─────────────────────────────────────────────────────────────
+
 async function onPackageJsonChange(uri: vscode.Uri) {
   const config = vscode.workspace.getConfiguration('npi');
   if (!config.get<boolean>('showInlineHints', true)) return;
@@ -191,15 +222,17 @@ async function onPackageJsonChange(uri: vscode.Uri) {
   }
 }
 
+// ─── Webview Panels ──────────────────────────────────────────────────────────
+
 function showAnalysisPanel(analysis: PackageAnalysis) {
   const panel = vscode.window.createWebviewPanel(
     'npiAnalysis',
     `NPI: ${analysis.package.name}`,
     vscode.ViewColumn.Beside,
-    {}
+    { enableScripts: false }
   );
 
-  panel.webview.html = generateAnalysisHtml(analysis);
+  panel.webview.html = generateAnalysisHtml(analysis, panel.webview);
 }
 
 function showComparisonPanel(results: PackageAnalysis[]) {
@@ -207,10 +240,10 @@ function showComparisonPanel(results: PackageAnalysis[]) {
     'npiComparison',
     'NPI: Package Comparison',
     vscode.ViewColumn.Beside,
-    {}
+    { enableScripts: false }
   );
 
-  panel.webview.html = generateComparisonHtml(results);
+  panel.webview.html = generateComparisonHtml(results, panel.webview);
 }
 
 function showExplanationPanel(name: string, explanation: { whyUsed: string; whyMovedAway?: string; currentSentiment: string; alternatives: string[] }) {
@@ -218,54 +251,85 @@ function showExplanationPanel(name: string, explanation: { whyUsed: string; whyM
     'npiExplanation',
     `NPI: Why ${name}?`,
     vscode.ViewColumn.Beside,
-    {}
+    { enableScripts: false }
   );
 
+  const nonce = getNonce();
+  const safeName = escapeHtml(name);
+  const safeWhyUsed = escapeHtml(explanation.whyUsed);
+  const safeWhyMovedAway = explanation.whyMovedAway ? escapeHtml(explanation.whyMovedAway) : '';
+  const safeSentiment = escapeHtml(explanation.currentSentiment);
+  const safeAlternatives = explanation.alternatives.map(escapeHtml);
+
   panel.webview.html = `<!DOCTYPE html>
-<html><head><style>body{font-family:system-ui;padding:20px;color:#e0e0e0;background:#1e1e1e}h1{color:#fff}h2{color:#9cdcfe;margin-top:24px}p{line-height:1.6}ul{padding-left:20px}li{margin:4px 0}</style></head>
+<html><head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}';">
+<style nonce="${nonce}">body{font-family:system-ui;padding:20px;color:#e0e0e0;background:#1e1e1e}h1{color:#fff}h2{color:#9cdcfe;margin-top:24px}p{line-height:1.6}ul{padding-left:20px}li{margin:4px 0}</style>
+</head>
+<body>
+<h1>${safeName}</h1>
+<h2>Why developers used it</h2><p>${safeWhyUsed}</p>
+${safeWhyMovedAway ? `<h2>Why the ecosystem moved away</h2><p>${safeWhyMovedAway}</p>` : ''}
+<h2>Current sentiment</h2><p>${safeSentiment}</p>
+${safeAlternatives.length > 0 ? `<h2>Modern alternatives</h2><ul>${safeAlternatives.map((a) => `<li>${a}</li>`).join('')}</ul>` : ''}
+</body></html>`;
+}
+
+function generateAnalysisHtml(analysis: PackageAnalysis, _webview: vscode.Webview): string {
+  const nonce = getNonce();
+  const name = escapeHtml(analysis.package.name);
+  const desc = escapeHtml(analysis.package.description);
+
+  const recs = analysis.recommendations.map((r) => {
+    const cls = r.severity === 'critical' ? 'crit' : 'warn';
+    return `<p class="${cls}">${escapeHtml(r.severity.toUpperCase())}: ${escapeHtml(r.message)}</p>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}';">
+<style nonce="${nonce}">body{font-family:system-ui;padding:20px;color:#e0e0e0;background:#1e1e1e}h1{color:#fff}table{border-collapse:collapse;width:100%}td,th{padding:8px 12px;text-align:left;border-bottom:1px solid #333}th{color:#9cdcfe}.warn{color:#f0ad4e}.crit{color:#d9534f}.good{color:#5cb85c}h2{color:#9cdcfe;margin-top:24px}.note{color:#888;font-size:0.85em;margin-top:24px}</style>
+</head>
 <body>
 <h1>${name}</h1>
-<h2>Why developers used it</h2><p>${explanation.whyUsed}</p>
-${explanation.whyMovedAway ? `<h2>Why the ecosystem moved away</h2><p>${explanation.whyMovedAway}</p>` : ''}
-<h2>Current sentiment</h2><p>${explanation.currentSentiment}</p>
-${explanation.alternatives.length > 0 ? `<h2>Modern alternatives</h2><ul>${explanation.alternatives.map((a) => `<li>${a}</li>`).join('')}</ul>` : ''}
-</body></html>`;
-}
-
-function generateAnalysisHtml(analysis: PackageAnalysis): string {
-  return `<!DOCTYPE html>
-<html><head><style>body{font-family:system-ui;padding:20px;color:#e0e0e0;background:#1e1e1e}h1{color:#fff}table{border-collapse:collapse;width:100%}td,th{padding:8px 12px;text-align:left;border-bottom:1px solid #333}th{color:#9cdcfe}.warn{color:#f0ad4e}.crit{color:#d9534f}.good{color:#5cb85c}</style></head>
-<body>
-<h1>${analysis.package.name}</h1>
-<p>${analysis.package.description}</p>
+<p>${desc}</p>
 <table>
-<tr><th>Health Score</th><td class="${analysis.health.overall >= 70 ? 'good' : 'warn'}">${analysis.health.overall}/100</td></tr>
-<tr><th>Bundle Impact</th><td>${analysis.bundle.level}</td></tr>
-<tr><th>TypeScript</th><td>${analysis.dx.typescript}</td></tr>
-<tr><th>ESM</th><td>${analysis.dx.esm ? '✓' : '✗'}</td></tr>
-<tr><th>Tree Shaking</th><td>${analysis.bundle.treeShaking}</td></tr>
-<tr><th>Ecosystem</th><td>${analysis.ecosystem.status}</td></tr>
+<tr><th>Estimated Health</th><td class="${analysis.health.overall >= 70 ? 'good' : 'warn'}">${analysis.health.overall}/100</td></tr>
+<tr><th>Bundle Impact</th><td>${escapeHtml(analysis.bundle.level)}</td></tr>
+<tr><th>TypeScript</th><td>${escapeHtml(analysis.dx.typescript)}</td></tr>
+<tr><th>ESM</th><td>${analysis.dx.esm ? '&#10003;' : '&#10007;'}</td></tr>
+<tr><th>Tree Shaking</th><td>${escapeHtml(analysis.bundle.treeShaking)}</td></tr>
+<tr><th>Ecosystem</th><td>${escapeHtml(analysis.ecosystem.status)}</td></tr>
 </table>
-${analysis.recommendations.length > 0 ? `<h2>Recommendations</h2>${analysis.recommendations.map((r) => `<p class="${r.severity === 'critical' ? 'crit' : 'warn'}">${r.severity.toUpperCase()}: ${r.message}</p>`).join('')}` : ''}
+${recs ? `<h2>Recommendations</h2>${recs}` : ''}
+<p class="note">Scores are heuristic estimates based on npm/GitHub metadata and curated rules.</p>
 </body></html>`;
 }
 
-function generateComparisonHtml(results: PackageAnalysis[]): string {
-  const headers = results.map((r) => `<th>${r.package.name}</th>`).join('');
+function generateComparisonHtml(results: PackageAnalysis[], _webview: vscode.Webview): string {
+  const nonce = getNonce();
+  const headers = results.map((r) => `<th>${escapeHtml(r.package.name)}</th>`).join('');
   const rows = [
-    ['Health', ...results.map((r) => `${r.health.overall}/100`)],
+    ['Estimated Health', ...results.map((r) => `${r.health.overall}/100`)],
     ['Bundle', ...results.map((r) => r.bundle.level)],
     ['TypeScript', ...results.map((r) => r.dx.typescript)],
-    ['ESM', ...results.map((r) => r.dx.esm ? '✓' : '✗')],
+    ['ESM', ...results.map((r) => r.dx.esm ? '&#10003;' : '&#10007;')],
     ['Ecosystem', ...results.map((r) => r.ecosystem.status)],
   ];
 
   return `<!DOCTYPE html>
-<html><head><style>body{font-family:system-ui;padding:20px;color:#e0e0e0;background:#1e1e1e}h1{color:#fff}table{border-collapse:collapse;width:100%}td,th{padding:8px 12px;text-align:left;border-bottom:1px solid #333}th{color:#9cdcfe}</style></head>
+<html><head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}';">
+<style nonce="${nonce}">body{font-family:system-ui;padding:20px;color:#e0e0e0;background:#1e1e1e}h1{color:#fff}table{border-collapse:collapse;width:100%}td,th{padding:8px 12px;text-align:left;border-bottom:1px solid #333}th{color:#9cdcfe}.note{color:#888;font-size:0.85em;margin-top:24px}</style>
+</head>
 <body>
 <h1>Package Comparison</h1>
 <table><tr><th></th>${headers}</tr>
-${rows.map((row) => `<tr><th>${row[0]}</th>${row.slice(1).map((v) => `<td>${v}</td>`).join('')}</tr>`).join('')}
+${rows.map((row) => `<tr><th>${escapeHtml(row[0])}</th>${row.slice(1).map((v) => `<td>${escapeHtml(v)}</td>`).join('')}</tr>`).join('')}
 </table>
+<p class="note">Scores are heuristic estimates based on npm/GitHub metadata and curated rules.</p>
 </body></html>`;
 }

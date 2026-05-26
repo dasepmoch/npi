@@ -148,6 +148,7 @@ export interface NpmVersionResponse {
   name: string;
   version: string;
   description?: string;
+  deprecated?: string;
   main?: string;
   module?: string;
   types?: string;

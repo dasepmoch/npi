@@ -42,7 +42,7 @@ function transformToMetadata(
     created: new Date(times['created'] ?? Date.now()),
     weeklyDownloads,
     versions,
-    deprecated: undefined,
+    deprecated: latest?.deprecated,
     types: !!(latest?.types || latest?.typings),
     module: hasEsmSupport(latest),
     sideEffects: determineSideEffects(latest),

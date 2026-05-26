@@ -272,17 +272,28 @@ Built with:
 
 ## Scoring System
 
-### Health Score (0-100)
+> **Note:** Scores are heuristic estimates based on npm registry metadata, GitHub signals, and curated rules. They are not absolute measures of quality.
+
+### Estimated Health Score (0-100)
 Evaluates release frequency, issue ratio, contributor count, commit velocity, maintenance activity, and bus factor.
 
-### Bundle Impact
+### Bundle Impact (Estimated)
 Estimates install size, transitive dependencies, tree-shaking quality, and runtime overhead.
 
-### DX Score
+### DX Score (Heuristic)
 Analyzes TypeScript support, ESM compatibility, documentation quality, and API ergonomics.
 
 ### Ecosystem Score
 Detects legacy packages, deprecated ecosystems, migration trends, and modern alternatives.
+
+## Limitations
+
+- Scores are heuristic estimates, not absolute measures of package quality.
+- Bundle impact is approximated from npm metadata, not actual bundler output.
+- GitHub metadata may be unavailable due to rate limits or private repos.
+- TypeScript support detection uses heuristics when `@types/*` can't be verified.
+- This is not a replacement for `npm audit` or professional security review.
+- Stable packages that rarely update may score lower on maintenance metrics.
 
 ## Roadmap
 

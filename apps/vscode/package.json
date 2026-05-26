@@ -2,12 +2,14 @@
   "name": "npi-vscode",
   "displayName": "NPI - Intelligent npm Assistant",
   "description": "Package intelligence for VS Code. Analyze, compare, and get recommendations before installing npm packages.",
-  "version": "0.0.1",
-  "publisher": "npi",
+  "version": "1.0.0",
+  "publisher": "dasepmoch",
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": ["Other", "Linters"],
+  "keywords": ["npm", "package", "analyzer", "dependency", "health", "bundle"],
   "activationEvents": [
     "workspaceContains:package.json"
   ],
@@ -54,11 +56,12 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --target=node18",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "package": "vsce package"
+    "package": "pnpm run build && vsce package --no-dependencies",
+    "publish": "pnpm run build && vsce publish --no-dependencies"
   },
   "dependencies": {
     "@npi/core": "workspace:*",
@@ -68,6 +71,14 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.3.2",
+    "esbuild": "^0.28.0",
     "typescript": "^5.4.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dasepmoch/npi.git"
+  },
+  "homepage": "https://github.com/dasepmoch/npi#readme",
+  "license": "MIT"
 }

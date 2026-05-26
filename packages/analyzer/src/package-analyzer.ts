@@ -44,7 +44,9 @@ export class PackageAnalyzer {
       throw new Error(`Invalid package name: "${packageName}"`);
     }
 
-    const cacheKey = `analysis:${packageName}`;
+    const cacheKey = options?.project
+      ? `analysis:${packageName}:${options.project.framework}:${options.project.typescript}`
+      : `analysis:${packageName}`;
 
     // Check cache
     if (options?.cache !== false) {
@@ -100,17 +102,30 @@ export class PackageAnalyzer {
     packages: string[],
     options?: AnalyzerOptions
   ): Promise<PackageAnalysis[]> {
-    // Limit concurrency to avoid overwhelming APIs
     const results: PackageAnalysis[] = [];
+    const errors: Array<{ package: string; error: string }> = [];
 
     for (let i = 0; i < packages.length; i += MAX_CONCURRENT) {
       const batch = packages.slice(i, i + MAX_CONCURRENT);
-      const batchResults = await Promise.all(
+      const batchResults = await Promise.allSettled(
         batch.map((pkg) => this.analyze(pkg, options))
       );
-      results.push(...batchResults);
+
+      for (let j = 0; j < batchResults.length; j++) {
+        const result = batchResults[j];
+        if (result.status === 'fulfilled') {
+          results.push(result.value);
+        } else {
+          errors.push({
+            package: batch[j],
+            error: result.reason instanceof Error ? result.reason.message : 'Unknown error',
+          });
+        }
+      }
     }
 
+    // Store errors for callers that want to check them
+    (results as PackageAnalysis[] & { _errors?: typeof errors })._errors = errors;
     return results;
   }
 }
