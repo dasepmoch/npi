@@ -17,7 +17,7 @@ export class GithubClient {
   private get headers(): Record<string, string> {
     const h: Record<string, string> = {
       Accept: 'application/vnd.github.v3+json',
-      'User-Agent': 'npi-cli',
+      'User-Agent': 'npi',
     };
     if (this.token) {
       h['Authorization'] = `Bearer ${this.token}`;

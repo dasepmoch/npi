@@ -6,7 +6,7 @@ Thanks for your interest in contributing to npi.
 
 ```bash
 # Clone the repo
-git clone https://github.com/dasepmoch/npi-cli.git
+git clone https://github.com/dasepmoch/npi.git
 cd npi
 
 # Install dependencies

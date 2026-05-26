@@ -1,41 +1,47 @@
 {
-  "name": "npi",
-  "version": "0.0.1",
+  "name": "@dasepmoch/npi",
+  "version": "1.0.1",
   "type": "module",
-  "description": "Intelligent npm install assistant",
+  "description": "Intelligent npm install assistant - think before you install",
   "bin": {
-    "npi": "./dist/bin.js"
+    "npi": "dist/bin.mjs"
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.mjs",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "start": "node dist/bin.js"
+    "start": "node dist/bin.mjs",
+    "prepublishOnly": "tsup"
   },
   "dependencies": {
-    "@npi/core": "workspace:*",
-    "@npi/analyzer": "workspace:*",
-    "@npi/npm": "workspace:*",
-    "@npi/github": "workspace:*",
-    "@npi/scoring": "workspace:*",
-    "@npi/rules": "workspace:*",
-    "@npi/cache": "workspace:*",
-    "@npi/recommendation-engine": "workspace:*",
-    "@npi/explanation-engine": "workspace:*",
-    "@npi/framework-detector": "workspace:*",
-    "@npi/formatter": "workspace:*",
     "cac": "^6.7.14",
-    "picocolors": "^1.0.0",
-    "ora": "^8.0.0",
     "execa": "^9.0.0",
-    "gradient-string": "^3.0.0"
+    "gradient-string": "^3.0.0",
+    "ora": "^8.0.0",
+    "picocolors": "^1.0.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "@types/gradient-string": "^1.1.6"
+    "@npi/analyzer": "workspace:*",
+    "@npi/cache": "workspace:*",
+    "@npi/core": "workspace:*",
+    "@npi/explanation-engine": "workspace:*",
+    "@npi/formatter": "workspace:*",
+    "@npi/framework-detector": "workspace:*",
+    "@npi/github": "workspace:*",
+    "@npi/npm": "workspace:*",
+    "@npi/recommendation-engine": "workspace:*",
+    "@npi/rules": "workspace:*",
+    "@npi/scoring": "workspace:*",
+    "@types/gradient-string": "^1.1.6",
+    "tsup": "^8.5.1",
+    "typescript": "^5.4.0"
   },
   "keywords": [
     "npm",
@@ -43,7 +49,21 @@
     "assistant",
     "intelligence",
     "dependency",
-    "analyzer"
+    "analyzer",
+    "package",
+    "health",
+    "bundle",
+    "alternatives",
+    "cli"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dasepmoch/npi.git"
+  },
+  "homepage": "https://github.com/dasepmoch/npi#readme",
+  "author": "dasepmoch",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
