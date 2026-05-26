@@ -15,6 +15,13 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/dasepmoch/npi/actions/workflows/ci.yml"><img src="https://github.com/dasepmoch/npi/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/dasepmoch/npi/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
+  <a href="https://www.npmjs.com/package/npi"><img src="https://img.shields.io/npm/v/npi.svg" alt="npm version" /></a>
+  <a href="https://buymeacoffee.com/dasepmoch"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow.svg" alt="Buy Me a Coffee" /></a>
+</p>
+
+<p align="center">
   <a href="#features">Features</a> •
   <a href="#install">Install</a> •
   <a href="#usage">Usage</a> •
@@ -305,6 +312,12 @@ pnpm test
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
+## Support
+
+If npi saves you time, consider supporting the project:
+
+<a href="https://buymeacoffee.com/dasepmoch"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow.svg?style=for-the-badge" alt="Buy Me a Coffee" /></a>
+
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE) for details.
