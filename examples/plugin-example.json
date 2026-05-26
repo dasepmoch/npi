@@ -1,0 +1,49 @@
+{
+  "name": "my-team-rules",
+  "version": "1.0.0",
+  "rules": [
+    {
+      "id": "no-jquery",
+      "name": "No jQuery",
+      "description": "jQuery is not allowed in this project",
+      "severity": "critical",
+      "match": "jquery",
+      "message": "jQuery is not allowed. Use native DOM APIs or a modern framework.",
+      "alternatives": [
+        { "name": "native DOM", "description": "Built-in browser APIs" }
+      ],
+      "reasons": [
+        "Project uses React/Vue",
+        "jQuery conflicts with virtual DOM",
+        "Unnecessary bundle weight"
+      ]
+    },
+    {
+      "id": "no-legacy-state",
+      "name": "No Legacy State Management",
+      "description": "Prefer modern state management",
+      "severity": "warning",
+      "match": ["redux", "mobx"],
+      "message": "Consider using lighter state management solutions.",
+      "alternatives": [
+        { "name": "zustand", "description": "Lightweight state management" },
+        { "name": "jotai", "description": "Primitive and flexible state" }
+      ],
+      "reasons": [
+        "Excessive boilerplate",
+        "Modern alternatives are simpler"
+      ]
+    },
+    {
+      "id": "no-moment-family",
+      "name": "No Moment-like Libraries",
+      "description": "Block all moment-related packages",
+      "severity": "warning",
+      "match": "moment*",
+      "message": "Moment and related packages are not allowed. Use dayjs.",
+      "alternatives": [
+        { "name": "dayjs", "description": "2KB Moment-compatible alternative" }
+      ]
+    }
+  ]
+}

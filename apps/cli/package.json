@@ -1,0 +1,49 @@
+{
+  "name": "npi",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Intelligent npm install assistant",
+  "bin": {
+    "npi": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "start": "node dist/bin.js"
+  },
+  "dependencies": {
+    "@npi/core": "workspace:*",
+    "@npi/analyzer": "workspace:*",
+    "@npi/npm": "workspace:*",
+    "@npi/github": "workspace:*",
+    "@npi/scoring": "workspace:*",
+    "@npi/rules": "workspace:*",
+    "@npi/cache": "workspace:*",
+    "@npi/recommendation-engine": "workspace:*",
+    "@npi/explanation-engine": "workspace:*",
+    "@npi/framework-detector": "workspace:*",
+    "@npi/formatter": "workspace:*",
+    "cac": "^6.7.14",
+    "picocolors": "^1.0.0",
+    "ora": "^8.0.0",
+    "execa": "^9.0.0",
+    "gradient-string": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/gradient-string": "^1.1.6"
+  },
+  "keywords": [
+    "npm",
+    "install",
+    "assistant",
+    "intelligence",
+    "dependency",
+    "analyzer"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,18 @@
+{
+  "cache": {
+    "enabled": true,
+    "ttl": 7200
+  },
+  "ui": {
+    "colors": true,
+    "compact": false
+  },
+  "install": {
+    "autoConfirm": false,
+    "preferAlternatives": true,
+    "showBundleImpact": true
+  },
+  "telemetry": {
+    "enabled": false
+  }
+}

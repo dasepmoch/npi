@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Turbo
+.turbo/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Coverage
+coverage/
+
+# Cache
+.cache/
+
+# VSCode extension output
+*.vsix
+
+# Lock files (keep pnpm-lock.yaml)
+package-lock.json
+yarn.lock
+bun.lockb

@@ -1,0 +1,73 @@
+{
+  "name": "npi-vscode",
+  "displayName": "NPI - Intelligent npm Assistant",
+  "description": "Package intelligence for VS Code. Analyze, compare, and get recommendations before installing npm packages.",
+  "version": "0.0.1",
+  "publisher": "npi",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other", "Linters"],
+  "activationEvents": [
+    "workspaceContains:package.json"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "npi.analyzePackage",
+        "title": "NPI: Analyze Package"
+      },
+      {
+        "command": "npi.auditDependencies",
+        "title": "NPI: Audit Dependencies"
+      },
+      {
+        "command": "npi.comparePackages",
+        "title": "NPI: Compare Packages"
+      },
+      {
+        "command": "npi.whyPackage",
+        "title": "NPI: Explain Package"
+      }
+    ],
+    "configuration": {
+      "title": "NPI",
+      "properties": {
+        "npi.showInlineHints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show inline hints for problematic packages in package.json"
+        },
+        "npi.severity": {
+          "type": "string",
+          "default": "warning",
+          "enum": ["critical", "warning", "suggestion", "info"],
+          "description": "Minimum severity level to show diagnostics"
+        },
+        "npi.cache.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable caching of package analysis results"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "@npi/core": "workspace:*",
+    "@npi/analyzer": "workspace:*",
+    "@npi/formatter": "workspace:*",
+    "@npi/explanation-engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  }
+}

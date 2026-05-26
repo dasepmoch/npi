@@ -1,0 +1,26 @@
+{
+  "name": "npi-monorepo",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Intelligent npm install assistant",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@9.1.0",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "clean": "turbo clean",
+    "typecheck": "turbo typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.7"
+  }
+}

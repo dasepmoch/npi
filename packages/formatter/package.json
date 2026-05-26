@@ -1,0 +1,27 @@
+{
+  "name": "@npi/formatter",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@npi/core": "workspace:*",
+    "picocolors": "^1.0.0",
+    "cli-table3": "^0.6.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@npi/analyzer",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@npi/core": "workspace:*",
+    "@npi/npm": "workspace:*",
+    "@npi/github": "workspace:*",
+    "@npi/scoring": "workspace:*",
+    "@npi/rules": "workspace:*",
+    "@npi/cache": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

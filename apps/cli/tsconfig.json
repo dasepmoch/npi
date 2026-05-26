@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/core" },
+    { "path": "../../packages/analyzer" },
+    { "path": "../../packages/npm" },
+    { "path": "../../packages/github" },
+    { "path": "../../packages/scoring" },
+    { "path": "../../packages/rules" },
+    { "path": "../../packages/cache" },
+    { "path": "../../packages/recommendation-engine" },
+    { "path": "../../packages/explanation-engine" },
+    { "path": "../../packages/framework-detector" },
+    { "path": "../../packages/formatter" }
+  ]
+}
