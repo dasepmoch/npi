@@ -188,8 +188,11 @@ function severityLevel(severity: Severity): number {
 
 
 function cleanVersionRange(range: string): string | undefined {
-  // Strip common prefixes to get a usable version hint
-  const cleaned = range.replace(/^[\^~>=<\s]*/, '');
-  if (!cleaned || cleaned === '*' || cleaned === 'latest') return undefined;
-  return cleaned;
+  if (!range || range === '*' || range === 'latest') return undefined;
+  // Skip non-registry specs
+  if (range.startsWith('workspace:') || range.startsWith('file:') || range.startsWith('link:') || range.startsWith('git') || range.startsWith('github:')) {
+    return undefined;
+  }
+  // Pass through to semver resolver as-is
+  return range;
 }

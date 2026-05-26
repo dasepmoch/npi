@@ -250,6 +250,33 @@ export const antiPatternRules: Rule[] = [
     },
   },
   {
+    id: 'install-scripts',
+    name: 'Has Install Scripts',
+    description: 'Package runs scripts during installation',
+    severity: 'info',
+    evaluate: (ctx) => {
+      if (!ctx.analysis.package.hasInstallScripts) return { triggered: false };
+
+      const scripts = ctx.analysis.package.installScripts ?? [];
+      return {
+        triggered: true,
+        recommendation: {
+          package: ctx.analysis.package.name,
+          severity: 'info',
+          message: `This package runs lifecycle scripts during installation: ${scripts.join(', ')}. These execute code on your machine.`,
+          alternatives: [],
+          reasons: [
+            `Has install scripts: ${scripts.join(', ')}`,
+            'Install scripts execute code on your machine',
+            'Could be a supply-chain risk vector',
+            'Review scripts before installing',
+          ],
+          category: 'security',
+        },
+      };
+    },
+  },
+  {
     id: 'license-risk',
     name: 'Restrictive License',
     description: 'Package has a potentially restrictive license',

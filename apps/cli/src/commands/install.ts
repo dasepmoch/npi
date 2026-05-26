@@ -44,8 +44,10 @@ export async function installCommand(
       (r) => r.alternatives.length > 0
     );
 
+    const autoConfirm = options['yes'] === true || config.install.autoConfirm;
+
     // Step 4: Handle alternatives
-    if (hasAlternatives && !options['yes']) {
+    if (hasAlternatives && !autoConfirm) {
       const allAlternatives = analysis.recommendations
         .flatMap((r) => r.alternatives)
         .slice(0, 4);
@@ -69,7 +71,7 @@ export async function installCommand(
     }
 
     // Step 5: Confirm install
-    if (hasWarnings && !options['yes']) {
+    if (hasWarnings && !autoConfirm) {
       const proceed = await confirm(`Install ${pc.bold(packageName)} anyway?`, false);
       if (!proceed) {
         console.log(`\n  ${pc.dim('Installation cancelled.')}\n`);
@@ -103,7 +105,7 @@ async function doInstall(
 
   const { cmd, args } = commands[packageManager] ?? commands['npm'];
 
-  if (options['dryRun'] === true) {
+  if (options['dryRun'] === true || options['dry-run'] === true) {
     console.log(`\n  ${pc.dim('Dry run - would execute:')}`);
     console.log(`  ${pc.bold(`${cmd} ${args.join(' ')}`)}\n`);
     return;

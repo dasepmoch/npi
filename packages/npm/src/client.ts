@@ -159,6 +159,7 @@ export interface NpmVersionResponse {
   peerDependencies?: Record<string, string>;
   sideEffects?: boolean | string[];
   type?: string;
+  scripts?: Record<string, string>;
   dist?: {
     tarball: string;
     shasum: string;

@@ -5,14 +5,14 @@ import { formatExplanation } from '@npi/formatter';
 import { PackageNotFoundError, NetworkError } from '@npi/core';
 import { withSpinner } from '../ui/spinner.js';
 
-export async function whyCommand(packageName: string): Promise<void> {
+export async function whyCommand(packageName: string, options?: { version?: string }): Promise<void> {
   try {
     const analyzer = new PackageAnalyzer();
     const explanationEngine = new ExplanationEngine();
 
     const analysis = await withSpinner(
-      `Researching ${pc.bold(packageName)}...`,
-      () => analyzer.analyze(packageName)
+      `Researching ${pc.bold(packageName)}${options?.version ? `@${options.version}` : ''}...`,
+      () => analyzer.analyze(packageName, { version: options?.version })
     );
 
     const explanation = explanationEngine.explain(analysis);

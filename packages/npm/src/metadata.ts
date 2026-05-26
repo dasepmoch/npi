@@ -1,3 +1,4 @@
+import semver from 'semver';
 import type { NpmPackageMetadata } from '@npi/core';
 import { NpmClient, type NpmRegistryResponse, type NpmVersionResponse } from './client.js';
 
@@ -18,7 +19,7 @@ export async function fetchPackageMetadata(
 
 /**
  * Resolve a version specifier to an actual version from available versions.
- * Handles: exact versions, dist-tags, and simple major version matching.
+ * Handles: exact versions, dist-tags, semver ranges, and major/minor matching.
  */
 function resolveVersion(data: NpmRegistryResponse, requested?: string): string | undefined {
   if (!requested) return undefined;
@@ -28,60 +29,35 @@ function resolveVersion(data: NpmRegistryResponse, requested?: string): string |
     return data['dist-tags'][requested];
   }
 
-  // Check if it's an exact version match
+  const versions = Object.keys(data.versions ?? {}).filter((v) => !semver.prerelease(v));
+
+  // Check exact version match
   if (data.versions?.[requested]) {
     return requested;
   }
 
-  // Try to match major version (e.g., "18" matches "18.x.x")
-  const versions = Object.keys(data.versions ?? {});
+  // Try semver range matching
+  const resolved = semver.maxSatisfying(versions, requested);
+  if (resolved) return resolved;
 
-  // If requested looks like just a number, match major version
+  // Try major-only (e.g., "18" -> ">=18.0.0 <19.0.0")
   if (/^\d+$/.test(requested)) {
     const major = parseInt(requested, 10);
-    const matching = versions
-      .filter((v) => {
-        const parts = v.split('.');
-        return parseInt(parts[0], 10) === major && !v.includes('-');
-      })
-      .sort(compareVersions);
-    return matching[matching.length - 1]; // latest matching major
+    const range = `>=${major}.0.0 <${major + 1}.0.0`;
+    const resolved = semver.maxSatisfying(versions, range);
+    if (resolved) return resolved;
   }
 
-  // If requested is major.minor, match
+  // Try major.minor (e.g., "18.2" -> ">=18.2.0 <18.3.0")
   if (/^\d+\.\d+$/.test(requested)) {
-    const [reqMajor, reqMinor] = requested.split('.').map(Number);
-    const matching = versions
-      .filter((v) => {
-        const parts = v.split('.').map(Number);
-        return parts[0] === reqMajor && parts[1] === reqMinor && !v.includes('-');
-      })
-      .sort(compareVersions);
-    return matching[matching.length - 1];
+    const [maj, min] = requested.split('.').map(Number);
+    const range = `>=${maj}.${min}.0 <${maj}.${min + 1}.0`;
+    const resolved = semver.maxSatisfying(versions, range);
+    if (resolved) return resolved;
   }
 
-  // If it starts with ^ or ~, strip and try exact
-  const stripped = requested.replace(/^[\^~>=<]*/, '');
-  if (data.versions?.[stripped]) {
-    return stripped;
-  }
-
-  // Fallback: return undefined (will use latest)
+  // Nothing resolved
   return undefined;
-}
-
-/**
- * Simple semver comparison for sorting.
- */
-function compareVersions(a: string, b: string): number {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
-  for (let i = 0; i < 3; i++) {
-    if ((pa[i] ?? 0) !== (pb[i] ?? 0)) {
-      return (pa[i] ?? 0) - (pb[i] ?? 0);
-    }
-  }
-  return 0;
 }
 
 function transformToMetadata(
@@ -90,9 +66,14 @@ function transformToMetadata(
   requestedVersion?: string
 ): NpmPackageMetadata {
   const latestVersion = data['dist-tags']?.['latest'] ?? '';
+  const resolved = requestedVersion ? resolveVersion(data, requestedVersion) : undefined;
 
-  // Resolve the target version
-  const targetVersion = resolveVersion(data, requestedVersion) ?? latestVersion;
+  // If user explicitly requested a version that couldn't be resolved, throw
+  if (requestedVersion && !resolved) {
+    throw new Error(`Version "${requestedVersion}" not found for "${data.name}". Available: ${Object.keys(data['dist-tags'] ?? {}).join(', ')}`);
+  }
+
+  const targetVersion = resolved ?? latestVersion;
   const latest = data.versions?.[targetVersion];
   const versions = Object.keys(data.versions ?? {});
   const times = data.time ?? {};
@@ -119,6 +100,8 @@ function transformToMetadata(
     module: hasEsmSupport(latest),
     sideEffects: determineSideEffects(latest),
     unpackedSize: latest?.dist?.unpackedSize,
+    hasInstallScripts: hasLifecycleScripts(latest),
+    installScripts: getLifecycleScripts(latest),
   };
 }
 
@@ -150,4 +133,16 @@ function determineSideEffects(latest?: NpmVersionResponse): boolean {
   if (latest.sideEffects === false) return false;
   if (Array.isArray(latest.sideEffects)) return false; // partial = still tree-shakeable
   return true;
+}
+
+function hasLifecycleScripts(latest?: NpmVersionResponse): boolean {
+  if (!latest?.scripts) return false;
+  const lifecycle = ['preinstall', 'install', 'postinstall', 'prepare'];
+  return lifecycle.some((s) => latest.scripts?.[s]);
+}
+
+function getLifecycleScripts(latest?: NpmVersionResponse): string[] {
+  if (!latest?.scripts) return [];
+  const lifecycle = ['preinstall', 'install', 'postinstall', 'prepare'];
+  return lifecycle.filter((s) => latest.scripts?.[s]);
 }

@@ -17,9 +17,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@npi/core": "workspace:*"
+    "@npi/core": "workspace:*",
+    "semver": "^7.8.1"
   },
   "devDependencies": {
+    "@types/semver": "^7.7.1",
     "typescript": "^5.4.0"
   }
 }

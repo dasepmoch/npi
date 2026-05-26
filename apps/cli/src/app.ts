@@ -49,7 +49,8 @@ export function createApp() {
   cli
     .command('why <package>', 'Explain a package')
     .action(async (packageName: string) => {
-      await whyCommand(packageName);
+      const spec = parsePackageSpec(packageName);
+      await whyCommand(spec.name, { version: spec.version });
     });
 
   cli

@@ -219,7 +219,13 @@ importers:
       '@npi/core':
         specifier: workspace:*
         version: link:../core
+      semver:
+        specifier: ^7.8.1
+        version: 7.8.1
     devDependencies:
+      '@types/semver':
+        specifier: ^7.7.1
+        version: 7.7.1
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
@@ -1050,6 +1056,9 @@ packages:
 
   '@types/sarif@2.1.7':
     resolution: {integrity: sha512-kRz0VEkJqWLf1LLVN4pT1cg1Z9wAuvI6L97V3m2f5B76Tg8d413ddvLBPTEHAZJlnn4XSvu0FkZtViCQGVyrXQ==}
+
+  '@types/semver@7.7.1':
+    resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
 
   '@types/tinycolor2@1.4.6':
     resolution: {integrity: sha512-iEN8J0BoMnsWBqjVbWH/c0G0Hh7O21lpR2/+PrvAVgWdzL7eexIFm4JN/Wn10PTcmNdtS6U67r499mlWMXOxNw==}
@@ -3190,6 +3199,8 @@ snapshots:
   '@types/normalize-package-data@2.4.4': {}
 
   '@types/sarif@2.1.7': {}
+
+  '@types/semver@7.7.1': {}
 
   '@types/tinycolor2@1.4.6': {}
 

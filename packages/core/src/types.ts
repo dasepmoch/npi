@@ -24,6 +24,8 @@ export interface NpmPackageMetadata {
   module?: boolean;
   sideEffects?: boolean;
   unpackedSize?: number;
+  hasInstallScripts?: boolean;
+  installScripts?: string[];
 }
 
 export interface GithubMetadata {
