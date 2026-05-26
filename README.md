@@ -15,8 +15,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/dasepmoch/npi/actions/workflows/ci.yml"><img src="https://github.com/dasepmoch/npi/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
-  <a href="https://github.com/dasepmoch/npi/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
+  <a href="https://github.com/dasepmoch/npi-cli/actions/workflows/ci.yml"><img src="https://github.com/dasepmoch/npi-cli/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/dasepmoch/npi-cli/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
   <a href="https://www.npmjs.com/package/npi"><img src="https://img.shields.io/npm/v/npi.svg" alt="npm version" /></a>
   <a href="https://buymeacoffee.com/dasepmoch"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow.svg" alt="Buy Me a Coffee" /></a>
 </p>
@@ -297,7 +297,7 @@ Detects legacy packages, deprecated ecosystems, migration trends, and modern alt
 
 ```bash
 # Clone
-git clone https://github.com/dasepmoch/npi.git
+git clone https://github.com/dasepmoch/npi-cli.git
 cd npi
 
 # Install

@@ -1,7 +1,7 @@
 blank_issues_enabled: true
 contact_links:
   - name: Documentation
-    url: https://github.com/dasepmoch/npi#readme
+    url: https://github.com/dasepmoch/npi-cli#readme
     about: Check the README for usage and configuration
   - name: Support the project
     url: https://buymeacoffee.com/dasepmoch
