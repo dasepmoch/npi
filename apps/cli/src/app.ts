@@ -102,7 +102,7 @@ export function createApp() {
     });
 
   cli.help();
-  cli.version('1.4.0');
+  cli.version('2.0.0');
 
   return cli;
 }
