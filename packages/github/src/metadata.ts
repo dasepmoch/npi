@@ -22,9 +22,13 @@ export async function fetchGithubMetadata(
       ? recentWeeks.reduce((sum, w) => sum + w.total, 0) / recentWeeks.length
       : 0;
 
-    // Estimate closed issues from total (open_issues_count is only open)
-    // GitHub doesn't provide closed count in repo endpoint, so we estimate
-    const estimatedClosedIssues = Math.max(0, Math.round(repo.open_issues_count * 2.5));
+    // Note: GitHub's open_issues_count includes both issues AND pull requests.
+    // We can't easily separate them without additional API calls, so we use a
+    // conservative estimate for closed issues based on repo activity signals.
+    const estimatedTotalIssues = repo.stargazers_count > 1000
+      ? repo.open_issues_count * 4 // popular repos tend to close more
+      : repo.open_issues_count * 2;
+    const estimatedClosedIssues = Math.max(0, estimatedTotalIssues - repo.open_issues_count);
 
     return {
       stars: repo.stargazers_count,

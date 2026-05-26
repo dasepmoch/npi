@@ -51,7 +51,7 @@ export function formatAnalysis(analysis: PackageAnalysis): string {
         lines.push('');
         lines.push(`  ${pc.dim('Suggested:')}`);
         for (const alt of rec.alternatives.slice(0, 4)) {
-          lines.push(`  ${pc.green('•')} ${pc.bold(alt.name)} ${pc.dim(`— ${alt.description}`)}`);
+          lines.push(`  ${pc.green('•')} ${pc.bold(alt.name)} ${pc.dim(`- ${alt.description}`)}`);
         }
       }
 

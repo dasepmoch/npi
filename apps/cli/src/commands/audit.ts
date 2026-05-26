@@ -89,7 +89,7 @@ function printAuditSummary(
   if (critical.length > 0) {
     console.log(`  ${pc.red(`🚨 Critical: ${critical.length}`)}`);
     for (const issue of critical) {
-      console.log(`     ${pc.red('•')} ${pc.bold(issue.pkg)} — ${issue.message}`);
+      console.log(`     ${pc.red('•')} ${pc.bold(issue.pkg)} - ${issue.message}`);
     }
     console.log('');
   }
@@ -97,7 +97,7 @@ function printAuditSummary(
   if (warnings.length > 0) {
     console.log(`  ${pc.yellow(`⚠️  Warnings: ${warnings.length}`)}`);
     for (const issue of warnings) {
-      console.log(`     ${pc.yellow('•')} ${pc.bold(issue.pkg)} — ${issue.message}`);
+      console.log(`     ${pc.yellow('•')} ${pc.bold(issue.pkg)} - ${issue.message}`);
     }
     console.log('');
   }
@@ -105,7 +105,7 @@ function printAuditSummary(
   if (suggestions.length > 0) {
     console.log(`  ${pc.blue(`💡 Suggestions: ${suggestions.length}`)}`);
     for (const issue of suggestions.slice(0, 10)) {
-      console.log(`     ${pc.blue('•')} ${pc.bold(issue.pkg)} — ${issue.message}`);
+      console.log(`     ${pc.blue('•')} ${pc.bold(issue.pkg)} - ${issue.message}`);
     }
     if (suggestions.length > 10) {
       console.log(`     ${pc.dim(`... and ${suggestions.length - 10} more`)}`);
@@ -116,7 +116,7 @@ function printAuditSummary(
   if (infos.length > 0 && severityLevel(minSeverity) >= severityLevel('info')) {
     console.log(`  ${pc.dim(`ℹ️  Info: ${infos.length}`)}`);
     for (const issue of infos.slice(0, 5)) {
-      console.log(`     ${pc.dim('•')} ${pc.bold(issue.pkg)} — ${issue.message}`);
+      console.log(`     ${pc.dim('•')} ${pc.bold(issue.pkg)} - ${issue.message}`);
     }
     if (infos.length > 5) {
       console.log(`     ${pc.dim(`... and ${infos.length - 5} more`)}`);

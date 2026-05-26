@@ -1,6 +1,6 @@
 <p align="center">
   <br />
-  <img src=".github/logo.svg" width="80" alt="npi logo" />
+  <img src=".github/logo.svg" width="400" alt="npi logo" />
   <br />
 </p>
 
@@ -35,7 +35,7 @@
 
 **npi** is a dependency intelligence engine for the JavaScript ecosystem.
 
-It helps you make better decisions before installing packages — analyzing health, bundle impact, ecosystem sentiment, and recommending alternatives when appropriate.
+It helps you make better decisions before installing packages - analyzing health, bundle impact, ecosystem sentiment, and recommending alternatives when appropriate.
 
 ```bash
 # Instead of blindly installing:
@@ -64,9 +64,9 @@ npi moment
   moved to lighter, immutable alternatives.
 
   Suggested:
-  • dayjs — 2KB immutable date library
-  • date-fns — Modern modular date utility
-  • luxon — Powerful date library by Moment team
+  • dayjs - 2KB immutable date library
+  • date-fns - Modern modular date utility
+  • luxon - Powerful date library by Moment team
 
   Reasons:
   · 72KB bundle size
@@ -77,18 +77,18 @@ npi moment
 
 ## Features
 
-- **📊 Package Analysis** — Health scores, bundle impact, DX quality
-- **🧠 Smart Install** — Warns before problematic installs, suggests alternatives
-- **⚖️ Package Comparison** — Side-by-side comparison tables
-- **📖 Package Explanations** — Understand why packages exist and why ecosystems shift
-- **🔍 Framework Detection** — Adapts recommendations to your stack (Next.js, Vite, etc.)
-- **🔎 Dependency Audit** — Scan all dependencies in package.json at once
-- **🤖 CI Mode** — Exit non-zero on issues for CI/CD pipelines
-- **🔌 Plugin System** — Custom rules via JSON plugins
-- **⚙️ Config Support** — Global `~/.npi/config.json` and local `.npirc`
-- **💻 VSCode Extension** — Inline diagnostics and commands in your editor
-- **⚡ Fast** — Intelligent caching, parallel fetching, instant responses
-- **🎨 Beautiful** — Premium terminal UI, screenshot-worthy output
+- **📊 Package Analysis** - Health scores, bundle impact, DX quality
+- **🧠 Smart Install** - Warns before problematic installs, suggests alternatives
+- **⚖️ Package Comparison** - Side-by-side comparison tables
+- **📖 Package Explanations** - Understand why packages exist and why ecosystems shift
+- **🔍 Framework Detection** - Adapts recommendations to your stack (Next.js, Vite, etc.)
+- **🔎 Dependency Audit** - Scan all dependencies in package.json at once
+- **🤖 CI Mode** - Exit non-zero on issues for CI/CD pipelines
+- **🔌 Plugin System** - Custom rules via JSON plugins
+- **⚙️ Config Support** - Global `~/.npi/config.json` and local `.npirc`
+- **💻 VSCode Extension** - Inline diagnostics and commands in your editor
+- **⚡ Fast** - Intelligent caching, parallel fetching, instant responses
+- **🎨 Beautiful** - Premium terminal UI, screenshot-worthy output
 
 ## Install
 
@@ -320,4 +320,4 @@ If npi saves you time, consider supporting the project:
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT - see [LICENSE](LICENSE) for details.

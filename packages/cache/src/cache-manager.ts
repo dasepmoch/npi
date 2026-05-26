@@ -94,7 +94,7 @@ export class CacheManager {
       const filePath = this.getFilePath(key);
       await unlink(filePath);
     } catch {
-      // ignore — file may not exist
+      // ignore - file may not exist
     }
   }
 
@@ -110,7 +110,7 @@ export class CacheManager {
         files.map((file) => unlink(join(this.directory, file)))
       );
     } catch {
-      // ignore — directory may not exist
+      // ignore - directory may not exist
     }
   }
 
@@ -170,7 +170,7 @@ export class CacheManager {
         fileStats.slice(0, toRemove).map((f) => unlink(f.file).catch(() => {}))
       );
     } catch {
-      // ignore — non-critical operation
+      // ignore - non-critical operation
     }
   }
 }

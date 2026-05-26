@@ -35,7 +35,7 @@ export async function fetchDownloadStats(
       changePercent: Math.round(changePercent),
     };
   } catch {
-    // Non-critical — return neutral data
+    // Non-critical - return neutral data
     return {
       current: 0,
       previous: 0,

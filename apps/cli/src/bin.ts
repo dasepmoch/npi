@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createApp } from './app.js';
 
-// Graceful shutdown — restore terminal state on interrupt
+// Graceful shutdown - restore terminal state on interrupt
 process.on('SIGINT', () => {
   // Show cursor again (ora hides it)
   process.stdout.write('\x1B[?25h');

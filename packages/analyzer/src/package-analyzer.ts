@@ -16,13 +16,14 @@ const MAX_CONCURRENT = 5;
 export class PackageAnalyzer {
   private cache: CacheManager;
   private ruleEngine: RuleEngine;
+  private pluginsLoaded: Promise<void>;
 
   constructor(options?: { cacheTtl?: number }) {
     this.cache = new CacheManager({ ttl: options?.cacheTtl ?? 3600 });
     this.ruleEngine = new RuleEngine();
     this.ruleEngine.registerMany(packageRules);
     this.ruleEngine.registerMany(antiPatternRules);
-    this.loadPluginsAsync();
+    this.pluginsLoaded = this.loadPluginsAsync();
   }
 
   private async loadPluginsAsync(): Promise<void> {
@@ -76,6 +77,9 @@ export class PackageAnalyzer {
       recommendations: [],
       analyzedAt: new Date(),
     };
+
+    // Ensure plugins are loaded before evaluating rules
+    await this.pluginsLoaded;
 
     // Run rules
     const recommendations = this.ruleEngine.evaluate({

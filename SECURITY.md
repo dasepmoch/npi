@@ -23,8 +23,8 @@ Instead, please email or DM the maintainer directly. We will respond within 48 h
 
 ## Response Timeline
 
-- **48 hours** — Initial acknowledgment
-- **7 days** — Assessment and fix plan
-- **30 days** — Patch release (if applicable)
+- **48 hours** - Initial acknowledgment
+- **7 days** - Assessment and fix plan
+- **30 days** - Patch release (if applicable)
 
 Thank you for helping keep npi and its users safe.

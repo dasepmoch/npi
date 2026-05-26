@@ -1,5 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" fill="none">
-  <rect x="0" y="0" width="80" height="80" rx="16" ry="16" fill="#0a0a0a"/>
-  <text x="40" y="36" dominant-baseline="central" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="28" fill="#ffffff">npi</text>
-  <rect x="12" y="52" width="56" height="3" rx="1.5" ry="1.5" fill="#3b82f6" opacity="0.8"/>
+<svg width="600" height="200" viewBox="0 0 600 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="white" x1="0" y1="35" x2="0" y2="150" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EDEDED"/>
+    </linearGradient>
+
+    <linearGradient id="accent" x1="0" y1="0" x2="46" y2="46" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9B5CFF"/>
+      <stop offset="0.55" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#3B82F6"/>
+    </linearGradient>
+
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.55 0 0 0 0 0.31 0 0 0 0 1 0 0 0 0.45 0"/>
+      <feBlend in="SourceGraphic"/>
+    </filter>
+  </defs>
+
+  <rect width="600" height="200" rx="0" fill="#03050A"/>
+
+  <!-- icon n -->
+  <path d="M48 54C48 45.1634 55.1634 38 64 38H142L184 80V147C184 154.18 178.18 160 171 160H160C152.82 160 147 154.18 147 147V91C147 82.7157 140.284 76 132 76H89C80.7157 76 74 82.7157 74 91V147C74 154.18 68.1797 160 61 160H48V54Z" fill="url(#white)"/>
+  <path d="M48 132L74 160V133L48 107V132Z" fill="url(#white)"/>
+  <rect x="94" y="121" width="43" height="43" rx="9" fill="url(#accent)" filter="url(#softGlow)"/>
+
+  <!-- n -->
+  <path d="M250 160V96C250 76.1177 266.118 60 286 60H326C345.882 60 362 76.1177 362 96V160H334V99C334 91.268 327.732 85 320 85H292C284.268 85 278 91.268 278 99V160H250Z" fill="url(#white)"/>
+
+  <!-- p -->
+  <path d="M398 185V96C398 76.1177 414.118 60 434 60H478C497.882 60 514 76.1177 514 96V116C514 135.882 497.882 152 478 152H426V185H398ZM426 127H471C479.284 127 486 120.284 486 112V100C486 91.7157 479.284 85 471 85H441C432.716 85 426 91.7157 426 100V127Z" fill="url(#white)"/>
+
+  <!-- i -->
+  <rect x="548" y="60" width="28" height="100" rx="7" fill="url(#white)"/>
+  <rect x="548" y="22" width="28" height="28" rx="7" fill="url(#accent)" filter="url(#softGlow)"/>
 </svg>

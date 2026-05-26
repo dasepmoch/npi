@@ -6,10 +6,12 @@ const DEFAULT_TIMEOUT_MS = 10000;
 export class GithubClient {
   private token?: string;
   private timeoutMs: number;
+  private maxRetries: number;
 
-  constructor(options?: { token?: string; timeout?: number }) {
+  constructor(options?: { token?: string; timeout?: number; maxRetries?: number }) {
     this.token = options?.token ?? process.env['GITHUB_TOKEN'];
     this.timeoutMs = options?.timeout ?? DEFAULT_TIMEOUT_MS;
+    this.maxRetries = options?.maxRetries ?? 2;
   }
 
   private get headers(): Record<string, string> {
@@ -38,7 +40,7 @@ export class GithubClient {
     const url = `${GITHUB_API}/repos/${owner}/${repo}/stats/commit_activity`;
     const response = await this.fetchWithTimeout(url, { headers: this.headers });
 
-    // GitHub returns 202 when stats are being computed — treat as empty
+    // GitHub returns 202 when stats are being computed - treat as empty
     if (!response.ok || response.status === 202) {
       return [];
     }
@@ -67,24 +69,55 @@ export class GithubClient {
   }
 
   private async fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    let lastError: Error | undefined;
 
-    try {
-      const response = await fetch(url, {
-        ...init,
-        signal: controller.signal,
-      });
-      return response;
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new NetworkError(url);
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+
+      try {
+        const response = await fetch(url, {
+          ...init,
+          signal: controller.signal,
+        });
+
+        // Retry on 5xx server errors and 429 rate limit
+        if (response.status >= 500 || response.status === 429) {
+          if (attempt < this.maxRetries) {
+            clearTimeout(timeout);
+            await delay(Math.pow(2, attempt) * 500); // exponential backoff
+            continue;
+          }
+        }
+
+        return response;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        if (lastError.name === 'AbortError') {
+          clearTimeout(timeout);
+          if (attempt < this.maxRetries) {
+            await delay(Math.pow(2, attempt) * 500);
+            continue;
+          }
+          throw new NetworkError(url);
+        }
+        if (attempt < this.maxRetries) {
+          clearTimeout(timeout);
+          await delay(Math.pow(2, attempt) * 500);
+          continue;
+        }
+        throw lastError;
+      } finally {
+        clearTimeout(timeout);
       }
-      throw error;
-    } finally {
-      clearTimeout(timeout);
     }
+
+    throw lastError ?? new NetworkError(url);
   }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // ─── Response Types ──────────────────────────────────────────────────────────

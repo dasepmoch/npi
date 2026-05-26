@@ -26,9 +26,9 @@ pnpm dev
 
 This is a pnpm monorepo managed by Turborepo.
 
-- `apps/cli` — The main CLI application
-- `apps/vscode` — VSCode extension
-- `packages/*` — Shared libraries
+- `apps/cli` - The main CLI application
+- `apps/vscode` - VSCode extension
+- `packages/*` - Shared libraries
 
 ## Making Changes
 

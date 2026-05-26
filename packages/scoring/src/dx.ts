@@ -35,9 +35,10 @@ function determineTypescriptSupport(npm: NpmPackageMetadata): DxScore['typescrip
   // Check if package name suggests it's a @types package itself
   if (npm.name.startsWith('@types/')) return 'native';
 
-  // For popular packages, @types likely exists — but we can't verify without a network call.
-  // Use a conservative heuristic: only assume @types for very popular packages.
-  if (npm.weeklyDownloads > 500000) return 'definitelytyped';
+  // Heuristic: well-maintained popular packages tend to have @types available.
+  // We can't verify @types existence without a network call, but packages
+  // with high download counts in the modern era very likely have community types.
+  if (npm.weeklyDownloads > 100000) return 'definitelytyped';
 
   return 'none';
 }

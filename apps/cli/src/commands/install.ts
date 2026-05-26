@@ -46,7 +46,7 @@ export async function installCommand(
         const choices = [
           { label: `${pc.bold(packageName)} ${pc.dim('(original)')}`, value: packageName },
           ...allAlternatives.map((alt) => ({
-            label: `${pc.bold(alt.name)} ${pc.dim(`— ${alt.description}`)}`,
+            label: `${pc.bold(alt.name)} ${pc.dim(`- ${alt.description}`)}`,
             value: alt.name,
           })),
         ];
