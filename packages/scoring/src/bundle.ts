@@ -1,5 +1,56 @@
 import type { NpmPackageMetadata, BundleImpactScore } from '@npi/core';
 
+// ─── Bundlephobia API ────────────────────────────────────────────────────────
+
+interface BundlephobiaResult {
+  size: number;      // minified bytes
+  gzip: number;      // gzip bytes
+  dependencyCount: number;
+  hasJSModule: boolean;
+  hasJSNext: boolean;
+  hasSideEffects: boolean;
+}
+
+/**
+ * Fetch real bundle size from Bundlephobia API (free, no key).
+ * Returns undefined if unavailable (non-blocking, best-effort).
+ */
+async function fetchBundlephobia(packageName: string, version?: string): Promise<BundlephobiaResult | undefined> {
+  try {
+    const spec = version ? `${packageName}@${version}` : packageName;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    const response = await fetch(
+      `https://bundlephobia.com/api/size?package=${encodeURIComponent(spec)}&record=true`,
+      { signal: controller.signal }
+    );
+
+    clearTimeout(timeout);
+    if (!response.ok) return undefined;
+
+    const data = await response.json() as {
+      size?: number;
+      gzip?: number;
+      dependencyCount?: number;
+      hasJSModule?: boolean;
+      hasJSNext?: boolean;
+      hasSideEffects?: boolean;
+    };
+
+    return {
+      size: data.size ?? 0,
+      gzip: data.gzip ?? 0,
+      dependencyCount: data.dependencyCount ?? 0,
+      hasJSModule: data.hasJSModule ?? false,
+      hasJSNext: data.hasJSNext ?? false,
+      hasSideEffects: data.hasSideEffects ?? true,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 export function calculateBundleImpact(npm: NpmPackageMetadata): BundleImpactScore {
   const depCount = Object.keys(npm.dependencies).length;
   const installSize = npm.unpackedSize ?? estimateSize(npm);
@@ -18,6 +69,38 @@ export function calculateBundleImpact(npm: NpmPackageMetadata): BundleImpactScor
     transitiveDeps,
     treeShaking,
     sideEffects,
+    source: 'estimated',
+  };
+}
+
+/**
+ * Enhance bundle score with real Bundlephobia data (async, best-effort).
+ */
+export async function enhanceBundleWithReal(
+  score: BundleImpactScore,
+  packageName: string,
+  version?: string
+): Promise<BundleImpactScore> {
+  const real = await fetchBundlephobia(packageName, version);
+  if (!real) return score;
+
+  const gzipKb = real.gzip / 1024;
+  const level: BundleImpactScore['level'] =
+    gzipKb > 100 ? 'critical' :
+    gzipKb > 50 ? 'high' :
+    gzipKb > 20 ? 'moderate' :
+    gzipKb > 5 ? 'low' :
+    'minimal';
+
+  return {
+    ...score,
+    bundleSize: real.size,
+    gzipSize: real.gzip,
+    transitiveDeps: real.dependencyCount,
+    treeShaking: real.hasJSModule ? (real.hasSideEffects ? 'partial' : 'full') : 'none',
+    sideEffects: real.hasSideEffects,
+    level,
+    source: 'bundlephobia',
   };
 }
 

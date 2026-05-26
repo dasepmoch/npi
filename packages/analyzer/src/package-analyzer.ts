@@ -1,9 +1,10 @@
 import type { PackageAnalysis, ProjectContext } from '@npi/core';
 import { fetchPackageMetadata } from '@npi/npm';
 import { fetchGithubMetadata } from '@npi/github';
-import { calculateHealthScore, calculateBundleImpact, calculateDxScore, calculateEcosystemScore } from '@npi/scoring';
+import { calculateHealthScore, calculateBundleImpact, enhanceBundleWithReal, calculateDxScore, calculateEcosystemScore } from '@npi/scoring';
 import { RuleEngine, packageRules, antiPatternRules, loadPlugins } from '@npi/rules';
 import { CacheManager } from '@npi/cache';
+import { queryOsv } from '@npi/security';
 
 export interface AnalyzerOptions {
   cache?: boolean;
@@ -12,6 +13,7 @@ export interface AnalyzerOptions {
   ignore?: string[];
   ruleOverrides?: Record<string, string>;
   version?: string;
+  dependencyType?: 'dependency' | 'devDependency';
 }
 
 const MAX_CONCURRENT = 5;
@@ -66,11 +68,23 @@ export class PackageAnalyzer {
       ? await fetchGithubMetadata(npmMetadata.repository).catch(() => undefined)
       : undefined;
 
+    // Query vulnerabilities (non-blocking)
+    const vulnResult = await queryOsv(packageName, npmMetadata.version).catch(() => undefined);
+    const vulnerabilities = vulnResult?.vulnerabilities?.map((v) => ({
+      id: v.id,
+      summary: v.summary,
+      severity: v.severity,
+      fixedVersion: v.fixed_version,
+    })) ?? [];
+
     // Calculate scores
     const health = calculateHealthScore(npmMetadata, githubMetadata);
     const bundle = calculateBundleImpact(npmMetadata);
     const dx = calculateDxScore(npmMetadata, githubMetadata);
     const ecosystem = calculateEcosystemScore(npmMetadata, githubMetadata);
+
+    // Try to enhance with real bundle data (best-effort, non-blocking)
+    const enhancedBundle = await enhanceBundleWithReal(bundle, packageName, npmMetadata.version).catch(() => bundle);
 
     // Calculate confidence
     const confidence = computeConfidence(npmMetadata, githubMetadata);
@@ -80,9 +94,10 @@ export class PackageAnalyzer {
       package: npmMetadata,
       github: githubMetadata,
       health,
-      bundle,
+      bundle: enhancedBundle,
       dx,
       ecosystem,
+      vulnerabilities,
       recommendations: [],
       analyzedAt: new Date(),
       confidence,

@@ -118,8 +118,8 @@ export async function checkCommand(options: CheckOptions): Promise<void> {
     }
   }
 
-  // Exit non-zero if issues found
-  if (issues.length > 0) {
+  // Exit non-zero if issues or errors found
+  if (issues.length > 0 || errors.length > 0) {
     process.exit(1);
   }
 }

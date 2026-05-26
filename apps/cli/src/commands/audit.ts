@@ -1,5 +1,5 @@
 import pc from 'picocolors';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PackageAnalyzer } from '@npi/analyzer';
 import { formatSize, loadConfig } from '@npi/core';
@@ -10,6 +10,7 @@ export interface AuditOptions {
   severity?: string;
   json?: boolean;
   path?: string;
+  output?: string;
 }
 
 export async function auditCommand(options: AuditOptions): Promise<void> {
@@ -55,7 +56,7 @@ export async function auditCommand(options: AuditOptions): Promise<void> {
 
   // Check for partial failures
   const errors = (results as unknown as { _errors?: Array<{ package: string; error: string }> })._errors ?? [];
-  if (errors.length > 0) {
+  if (errors.length > 0 && !options.json) {
     console.log(`  ${pc.yellow('!')} ${errors.length} package(s) failed to analyze:`);
     for (const err of errors) {
       console.log(`     ${pc.dim('-')} ${err.package}: ${err.error}`);
@@ -79,7 +80,14 @@ export async function auditCommand(options: AuditOptions): Promise<void> {
   }
 
   if (options.json) {
-    console.log(JSON.stringify({ schemaVersion: '1.0', total: allDeps.length, issues, results }, null, 2));
+    console.log(JSON.stringify({ schemaVersion: '1.0', total: allDeps.length, issues, errors, results }, null, 2));
+    return;
+  }
+
+  // Export report if --output specified
+  if (options.output) {
+    await exportReport(options.output, results, issues, errors);
+    console.log(`\n  Report exported to ${options.output}\n`);
     return;
   }
 
@@ -195,4 +203,51 @@ function cleanVersionRange(range: string): string | undefined {
   }
   // Pass through to semver resolver as-is
   return range;
+}
+
+
+async function exportReport(
+  outputPath: string,
+  results: PackageAnalysis[],
+  issues: Array<{ pkg: string; severity: Severity; message: string }>,
+  errors: Array<{ package: string; error: string }>
+): Promise<void> {
+  if (outputPath.endsWith('.md')) {
+    const lines = [
+      '# NPI Audit Report',
+      '',
+      `Generated: ${new Date().toISOString()}`,
+      `Packages scanned: ${results.length}`,
+      `Issues found: ${issues.length}`,
+      '',
+    ];
+
+    if (issues.length > 0) {
+      lines.push('## Issues', '');
+      for (const issue of issues) {
+        lines.push(`- **[${issue.severity.toUpperCase()}]** ${issue.pkg}: ${issue.message}`);
+      }
+      lines.push('');
+    }
+
+    if (errors.length > 0) {
+      lines.push('## Errors', '');
+      for (const err of errors) {
+        lines.push(`- ${err.package}: ${err.error}`);
+      }
+      lines.push('');
+    }
+
+    lines.push('## Package Scores', '');
+    lines.push('| Package | Health | Bundle | Decision |');
+    lines.push('|---------|--------|--------|----------|');
+    for (const r of results) {
+      lines.push(`| ${r.package.name} | ${r.health.overall}/100 | ${r.bundle.level} | ${r.decision ?? 'N/A'} |`);
+    }
+
+    await writeFile(outputPath, lines.join('\n'));
+  } else {
+    // Default to JSON for .json or any other extension
+    await writeFile(outputPath, JSON.stringify({ schemaVersion: '1.0', results, issues, errors }, null, 2));
+  }
 }

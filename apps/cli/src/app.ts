@@ -18,6 +18,7 @@ export function createApp() {
     .command('[package]', 'Analyze a package')
     .option('--no-cache', 'Disable cache')
     .option('--json', 'Output as JSON')
+    .option('--target <target>', 'Analysis target (browser|node)')
     .action(async (packageName: string | undefined, options: Record<string, unknown>) => {
       if (!packageName) {
         showBanner();
@@ -59,11 +60,13 @@ export function createApp() {
     .option('--severity <level>', 'Minimum severity to report (critical|warning|suggestion|info)', { default: 'info' })
     .option('--json', 'Output as JSON')
     .option('--path <dir>', 'Path to project directory')
+    .option('--output <file>', 'Export report to file (supports .json, .md)')
     .action(async (options: Record<string, unknown>) => {
       await auditCommand({
         severity: options['severity'] as string | undefined,
         json: options['json'] as boolean | undefined,
         path: options['path'] as string | undefined,
+        output: options['output'] as string | undefined,
       });
     });
 

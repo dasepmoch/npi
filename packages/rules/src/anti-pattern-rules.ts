@@ -258,18 +258,25 @@ export const antiPatternRules: Rule[] = [
       if (!ctx.analysis.package.hasInstallScripts) return { triggered: false };
 
       const scripts = ctx.analysis.package.installScripts ?? [];
+      const daysSinceCreated = daysBetween(toDate(ctx.analysis.package.created), new Date());
+      const isNew = daysSinceCreated < 30;
+      const lowDownloads = ctx.analysis.package.weeklyDownloads < 1000;
+
+      // Higher risk if package is new AND has low downloads AND install scripts
+      const severity = (isNew && lowDownloads) ? 'warning' : 'info';
+
       return {
         triggered: true,
         recommendation: {
           package: ctx.analysis.package.name,
-          severity: 'info',
-          message: `This package runs lifecycle scripts during installation: ${scripts.join(', ')}. These execute code on your machine.`,
+          severity,
+          message: `This package runs lifecycle scripts during installation: ${scripts.join(', ')}.${isNew && lowDownloads ? ' Combined with low downloads and recent creation, this is a higher risk signal.' : ''}`,
           alternatives: [],
           reasons: [
             `Has install scripts: ${scripts.join(', ')}`,
             'Install scripts execute code on your machine',
-            'Could be a supply-chain risk vector',
-            'Review scripts before installing',
+            ...(isNew ? ['Package was created less than 30 days ago'] : []),
+            ...(lowDownloads ? ['Package has fewer than 1000 weekly downloads'] : []),
           ],
           category: 'security',
         },
@@ -301,6 +308,98 @@ export const antiPatternRules: Rule[] = [
             'May require you to open-source your code',
             'May have commercial use restrictions',
             'Consult legal counsel for production use',
+          ],
+          category: 'security',
+        },
+      };
+    },
+  },
+  {
+    id: 'peer-dependency-mismatch',
+    name: 'Peer Dependency Mismatch',
+    description: 'Package has peer dependencies not satisfied by your project',
+    severity: 'warning',
+    evaluate: (ctx) => {
+      if (!ctx.project?.existingDeps || ctx.project.existingDeps.length === 0) {
+        return { triggered: false };
+      }
+
+      const peerDeps = ctx.analysis.package.peerDependencies;
+      if (Object.keys(peerDeps).length === 0) return { triggered: false };
+
+      const missingPeers: string[] = [];
+      for (const peer of Object.keys(peerDeps)) {
+        if (!ctx.project.existingDeps.includes(peer)) {
+          missingPeers.push(peer);
+        }
+      }
+
+      if (missingPeers.length === 0) return { triggered: false };
+
+      return {
+        triggered: true,
+        recommendation: {
+          package: ctx.analysis.package.name,
+          severity: 'warning',
+          message: `Missing peer dependencies: ${missingPeers.join(', ')}. You may need to install them separately.`,
+          alternatives: [],
+          reasons: missingPeers.map((p) => `Requires peer: ${p} (${peerDeps[p]})`),
+          category: 'dx',
+        },
+      };
+    },
+  },
+  {
+    id: 'known-vulnerability',
+    name: 'Known Vulnerability',
+    description: 'Package version has known security vulnerabilities',
+    severity: 'critical',
+    evaluate: (ctx) => {
+      const vulns = ctx.analysis.vulnerabilities;
+      if (!vulns || vulns.length === 0) return { triggered: false };
+
+      const critical = vulns.filter((v) => v.severity === 'CRITICAL' || v.severity === 'HIGH');
+      const severity = critical.length > 0 ? 'critical' : 'warning';
+
+      return {
+        triggered: true,
+        recommendation: {
+          package: ctx.analysis.package.name,
+          severity,
+          message: `${vulns.length} known vulnerability(ies) found in ${ctx.analysis.package.name}@${ctx.analysis.package.version}. ${critical.length > 0 ? `${critical.length} are high/critical severity.` : ''}`,
+          alternatives: [],
+          reasons: vulns.slice(0, 5).map((v) => `${v.id}: ${v.summary}${v.fixedVersion ? ` (fixed in ${v.fixedVersion})` : ''}`),
+          category: 'security',
+        },
+      };
+    },
+  },
+  {
+    id: 'recently-published',
+    name: 'Recently Published Version',
+    description: 'This specific version was published very recently',
+    severity: 'info',
+    evaluate: (ctx) => {
+      const lastPublish = toDate(ctx.analysis.package.lastPublish);
+      const daysSince = daysBetween(lastPublish, new Date());
+
+      if (daysSince > 7) return { triggered: false };
+
+      // Only warn if also low downloads or new package
+      const lowDownloads = ctx.analysis.package.weeklyDownloads < 10000;
+      if (!lowDownloads) return { triggered: false };
+
+      return {
+        triggered: true,
+        recommendation: {
+          package: ctx.analysis.package.name,
+          severity: 'info',
+          message: `This version was published ${daysSince < 1 ? 'today' : `${Math.round(daysSince)} day(s) ago`}. Exercise caution with very new releases of lesser-known packages.`,
+          alternatives: [],
+          reasons: [
+            `Published ${Math.round(daysSince)} day(s) ago`,
+            'New versions may contain undiscovered issues',
+            'Consider waiting for community validation',
           ],
           category: 'security',
         },

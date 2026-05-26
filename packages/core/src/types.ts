@@ -57,9 +57,11 @@ export interface BundleImpactScore {
   level: 'minimal' | 'low' | 'moderate' | 'high' | 'critical';
   installSize: number;
   bundleSize?: number;
+  gzipSize?: number;
   transitiveDeps: number;
   treeShaking: 'full' | 'partial' | 'none';
   sideEffects: boolean;
+  source?: 'estimated' | 'bundlephobia';
 }
 
 export interface DxScore {

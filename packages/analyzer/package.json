@@ -22,7 +22,8 @@
     "@npi/github": "workspace:*",
     "@npi/scoring": "workspace:*",
     "@npi/rules": "workspace:*",
-    "@npi/cache": "workspace:*"
+    "@npi/cache": "workspace:*",
+    "@npi/security": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.4.0"

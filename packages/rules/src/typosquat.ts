@@ -63,5 +63,34 @@ export function detectTyposquat(name: string): string | undefined {
     }
   }
 
+  // Check pattern-based detection
+  const patternMatch = detectTyposquatPatterns(name);
+  if (patternMatch) return patternMatch;
+
+  return undefined;
+}
+
+/**
+ * Additional typosquat patterns beyond Levenshtein.
+ */
+export function detectTyposquatPatterns(name: string): string | undefined {
+  if (name.startsWith('@')) return undefined;
+  if (POPULAR_PACKAGES.includes(name)) return undefined;
+
+  // Check separator tricks: react-dom vs reactdom vs react.dom
+  for (const popular of POPULAR_PACKAGES) {
+    // Remove separators and compare
+    const stripped = name.replace(/[-._]/g, '');
+    const popularStripped = popular.replace(/[-._]/g, '');
+    if (stripped === popularStripped && name !== popular) {
+      return popular;
+    }
+
+    // Plural/suffix bait: reacts, expresss, lodash-js
+    if (name === `${popular}s` || name === `${popular}js` || name === `${popular}-js`) {
+      return popular;
+    }
+  }
+
   return undefined;
 }

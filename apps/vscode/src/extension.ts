@@ -7,6 +7,15 @@ let diagnosticCollection: vscode.DiagnosticCollection;
 const analyzer = new PackageAnalyzer();
 const explanationEngine = new ExplanationEngine();
 
+let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+function debounce<T extends (...args: unknown[]) => unknown>(fn: T, ms: number): T {
+  return ((...args: unknown[]) => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => fn(...args), ms);
+  }) as unknown as T;
+}
+
 export function activate(context: vscode.ExtensionContext) {
   diagnosticCollection = vscode.languages.createDiagnosticCollection('npi');
   context.subscriptions.push(diagnosticCollection);
@@ -21,8 +30,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Watch package.json for changes
   const watcher = vscode.workspace.createFileSystemWatcher('**/package.json');
-  watcher.onDidChange(onPackageJsonChange);
-  watcher.onDidCreate(onPackageJsonChange);
+  watcher.onDidChange(debounce(onPackageJsonChange, 2000));
+  watcher.onDidCreate(debounce(onPackageJsonChange, 2000));
   context.subscriptions.push(watcher);
 
   // Run initial audit if package.json exists
@@ -188,13 +197,20 @@ async function onPackageJsonChange(uri: vscode.Uri) {
   try {
     const content = await vscode.workspace.fs.readFile(uri);
     const pkgJson = JSON.parse(Buffer.from(content).toString('utf-8'));
-    const deps = Object.keys(pkgJson.dependencies ?? {});
+
+    const includeDevDeps = config.get<boolean>('includeDevDependencies', false);
+    const maxDeps = config.get<number>('maxDependencies', 30);
+
+    const deps = [
+      ...Object.keys(pkgJson.dependencies ?? {}),
+      ...(includeDevDeps ? Object.keys(pkgJson.devDependencies ?? {}) : []),
+    ].slice(0, maxDeps);
 
     const diagnostics: vscode.Diagnostic[] = [];
     const document = await vscode.workspace.openTextDocument(uri);
     const text = document.getText();
 
-    for (const dep of deps.slice(0, 20)) {
+    for (const dep of deps) {
       try {
         const analysis = await analyzer.analyze(dep, { cache: true });
         for (const rec of analysis.recommendations) {

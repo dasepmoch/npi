@@ -12,6 +12,8 @@ const sharedNoExternal = [
   '@npi/explanation-engine',
   '@npi/framework-detector',
   '@npi/formatter',
+  '@npi/lockfile',
+  '@npi/security',
 ];
 
 export default defineConfig({

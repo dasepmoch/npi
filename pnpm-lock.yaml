@@ -63,6 +63,9 @@ importers:
       '@npi/github':
         specifier: workspace:*
         version: link:../../packages/github
+      '@npi/lockfile':
+        specifier: workspace:*
+        version: link:../../packages/lockfile
       '@npi/npm':
         specifier: workspace:*
         version: link:../../packages/npm
@@ -75,6 +78,9 @@ importers:
       '@npi/scoring':
         specifier: workspace:*
         version: link:../../packages/scoring
+      '@npi/security':
+        specifier: workspace:*
+        version: link:../../packages/security
       '@types/gradient-string':
         specifier: ^1.1.6
         version: 1.1.6
@@ -133,6 +139,9 @@ importers:
       '@npi/scoring':
         specifier: workspace:*
         version: link:../scoring
+      '@npi/security':
+        specifier: workspace:*
+        version: link:../security
     devDependencies:
       typescript:
         specifier: ^5.4.0
@@ -205,6 +214,16 @@ importers:
         version: 5.9.3
 
   packages/github:
+    dependencies:
+      '@npi/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/lockfile:
     dependencies:
       '@npi/core':
         specifier: workspace:*

@@ -51,6 +51,16 @@
           "type": "boolean",
           "default": true,
           "description": "Enable caching of package analysis results"
+        },
+        "npi.includeDevDependencies": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include devDependencies in analysis"
+        },
+        "npi.maxDependencies": {
+          "type": "number",
+          "default": 30,
+          "description": "Maximum number of dependencies to analyze"
         }
       }
     }
